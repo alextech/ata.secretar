@@ -1,0 +1,28 @@
+@import "../variables";
+@import "../styleUtils/mixins";
+
+::slotted(svg) {
+  width: 0.8em;
+  cursor: pointer;
+}
+
+// svg fill path in main style due to limitation of ::slotted
+.panel {
+  display: flex;
+  flex-direction: column;
+  @include shadow();
+
+  .title {
+    padding: 0.5em;
+    background-color: $ata-orange;
+    color: #ffffff;
+    font-size: 1.2em;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .panelContent {
+    padding: 1em;
+    background-color: #ffffff;
+  }
+}

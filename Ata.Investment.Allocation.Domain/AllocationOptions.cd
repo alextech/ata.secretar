@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Ata.Investment.Allocation.Domain.Allocation">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAACAEAQAgIAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Allocation.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Current" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Field Name="_history" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Ata.Investment.Allocation.Domain.AllocationVersion">
+    <Position X="3" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAQAAAAAAgAAAAAQBAIAAAIAAAAAAAABAAiA=</HashCode>
+      <FileName>Allocation.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsCollectionAssociation>
+      <Property Name="Options" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Ata.Investment.Allocation.Domain.Composition.AllocationOption">
+    <Position X="5.5" Y="3.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Composition\Option.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Option" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Property Name="CompositionParts" />
+    </ShowAsCollectionAssociation>
+  </Class>
+  <Class Name="Ata.Investment.Allocation.Domain.Composition.CompositionPart">
+    <Position X="9" Y="4.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACEAAAAA=</HashCode>
+      <FileName>Composition\CompositionPart.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Ata.Investment.Allocation.Domain.Composition.Option">
+    <Position X="5.5" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAIAAAAAAAIAAAAQAAAAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Composition\Option.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

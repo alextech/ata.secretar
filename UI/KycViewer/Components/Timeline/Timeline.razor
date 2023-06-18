@@ -1,0 +1,184 @@
+@using KycViewer.Components.Navigation
+@using Microsoft.JSInterop
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.Household
+@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Points
+@using Ata.Investment.Profile.Domain.Profile
+
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+@if (KycDocument != null)
+{
+    int years = PrimaryLifespan - PrimaryAge;
+
+    // TODO custom event when .net6 comes out https://github.com/dotnet/aspnetcore/issues/27651
+    // TODO Careful that attributes need to be in specific order, unless schedule to process group at once
+    <ata-timeline
+        startingYear="@CurrentYear"
+        years="@years"
+        age="@PrimaryAge"
+        disabled="@(_isDisabled)">
+        @foreach (Profile profile in KycDocument.AllProfiles)
+        {
+            <TimelineItem Profile="@profile"/>
+        }
+    </ata-timeline>
+
+    @if(KycDocument.IsJoint)
+    {
+        <Modal Title="Specify client" ModalType="ModalType.OkCancel"
+               SubmitHandler="@DispatchNewProfileSelectedEvent" CancelHandler="@OnCancelSelectionModal"
+               @ref="@_clientSelectionModal" >
+            <select @bind="@_selectedClientId" class="timelineClientSelect">
+                <option value="@KycDocument.PrimaryClient.Guid.ToString()">@KycDocument.PrimaryClient.Name</option>
+                <option value="@KycDocument.JointClient.Guid.ToString()">@KycDocument.JointClient.Name</option>
+            </select>
+        </Modal>
+    }
+}
+
+@code {
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [Parameter]
+    public PClient PrimaryClient { get; set; }
+
+    [Parameter]
+    public EventCallback<NewProfileSelectionEvent> OnNewProfileSelected { get; set; }
+
+    public int JointAge { get; set; }
+
+    public int PrimaryLifespan { get; set; } = 95;
+
+    public int JointLifespan { get; set; } = 95;
+
+    private int PrimaryAge => PrimaryClient.Age;
+
+    private int CurrentYear => KycDocument.Date.Year;
+
+    private bool _domainListenersAdded;
+
+    private bool _isDisabled;
+
+    private Guid _selectedClientId;
+
+    private Modal _clientSelectionModal;
+
+    protected override void OnInitialized()
+    {
+        if (Meeting.IsCompleted)
+        {
+            _isDisabled = Meeting.IsCompleted;
+            return;
+        }
+
+        QLayout.ValidationObserver.OnValidPathsChanged += OnClientValidationStateChanged;
+        OnClientValidationStateChanged(QLayout.ValidationObserver, null);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!_domainListenersAdded && KycDocument != null)
+        {
+            KycDocument.ProfileListChanged += OnProfilesListChanged;
+            _domainListenersAdded = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await JSRuntime.InvokeAsync<string>(
+            "uiUtils.registerTimelineBridge",
+            DotNetObjectReference.Create<Timeline>(this)
+            );
+    }
+
+    private NewProfileSelectionEvent _tmpSelectionEvent;
+
+    [JSInvokable]
+    public void NewItemRequestHandler(string placeholderId, int start, int end)
+    {
+        if (KycDocument.IsJoint)
+        {
+            _selectedClientId = KycDocument.PrimaryClient.Guid;
+            _tmpSelectionEvent = new NewProfileSelectionEvent()
+            {
+                From = Math.Min(start, end),
+                To = Math.Max(start, end),
+                PlaceholderId = placeholderId
+            };
+            _clientSelectionModal.Open();
+        }
+        else
+        {
+            OnNewProfileSelected.InvokeAsync(new NewProfileSelectionEvent()
+            {
+                ForClientId = KycDocument.PrimaryClient.Guid,
+                From = Math.Min(start, end),
+                To = Math.Max(start, end),
+                PlaceholderId = placeholderId
+            });
+        }
+    }
+
+    private void OnProfilesListChanged(object? sender, EventArgs eventArgs)
+    {
+        StateHasChanged();
+    }
+
+    private void DispatchNewProfileSelectedEvent()
+    {
+        OnNewProfileSelected.InvokeAsync(new NewProfileSelectionEvent()
+        {
+            ForClientId = _selectedClientId,
+            From = _tmpSelectionEvent.From,
+            To = _tmpSelectionEvent.To,
+            PlaceholderId = _tmpSelectionEvent.PlaceholderId
+        });
+
+        _tmpSelectionEvent = null;
+    }
+
+    private void OnClientValidationStateChanged(object sender, EventArgs eventArgs)
+    {
+
+        DocumentValidationObserver validationObserver = (DocumentValidationObserver)sender;
+        bool isValid = validationObserver.ValidPaths.Contains($"/client/{KycDocument.PrimaryClient.Guid}/info");
+
+        if (isValid && KycDocument.IsJoint)
+        {
+            isValid = validationObserver.ValidPaths.Contains($"/client/{KycDocument.JointClient?.Guid.ToString()!}/info");
+        }
+
+        _isDisabled = !isValid;
+        StateHasChanged();
+    }
+
+    private void OnCancelSelectionModal()
+    {
+        JSRuntime.InvokeVoidAsync("uiUtils.deleteTimelinePlaceholder", _tmpSelectionEvent.PlaceholderId);
+        _tmpSelectionEvent = null;
+    }
+
+    public void SyncUI()
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        KycDocument.ProfileListChanged -= OnProfilesListChanged;
+        QLayout.ValidationObserver.OnValidPathsChanged -= OnClientValidationStateChanged;
+    }
+}

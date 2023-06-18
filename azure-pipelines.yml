@@ -1,0 +1,119 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: 6.0.x
+    useGlobalJson: true
+
+- task: CmdLine@2
+  displayName: 'Show system info'
+  inputs:
+    script: 'dotnet --info; nuget help | head -n 1;node --version'
+
+
+# ======= NODE JS section BEGIN =====
+- task: Npm@1
+  displayName: 'Npm CI install'
+  inputs:
+    command: 'ci'
+    customRegistry: 'useFeed'
+    customFeed: 'b41028a8-ef62-44cd-81c1-66e95729b9cb'
+- task: Npm@1
+  displayName: 'NPM KycViewer: build'
+  inputs:
+    command: 'custom'
+    workingDir: '$(system.defaultWorkingDirectory)'
+    customCommand: 'run-script build'
+
+- task: DeleteFiles@1
+  displayName: 'Delete NodeJS compiler tools before C# build'
+  inputs:
+    SourceFolder:
+    Contents: |
+      **/node_modules/*
+      **/node_modules
+
+# ------- NODE JS section END -------
+
+
+
+# ======= DOTNET CORE BUILD section begin =======
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Unit Test'
+  inputs:
+    command: 'test'
+    arguments: '--filter "FullyQualifiedName!~Data&FullyQualifiedName!~Service&FullyQualifiedName!~Api"'
+    projects: '$(system.defaultWorkingDirectory)'
+
+# ------- DOTNET CORE BUILD section END ----------
+
+
+
+# ======== EF CORE section BEGIN ===============
+  # As of 3.0 preview 4 ef core tools are now separate
+- task: DotNetCoreCLI@2
+  displayName: 'install EF Core CLI tools'
+  inputs:
+    command: 'custom'
+    custom: 'tool'
+    arguments: 'install --global dotnet-ef --version 6.0.0'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Generate SQL migration script for Allocation Funds Context'
+  inputs:
+    command: 'custom'
+    workingDirectory: '$(system.defaultWorkingDirectory)'
+    custom: 'ef'
+    arguments: 'migrations script --idempotent -o $(Build.ArtifactStagingDirectory)/AllocationContext_Migration.sql --project Ata.Investment.Api --context AllocationContext'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Generate SQL migration script for Household/Profile Context'
+  inputs:
+    command: 'custom'
+    workingDirectory: '$(system.defaultWorkingDirectory)'
+    custom: 'ef'
+    arguments: 'migrations script --idempotent -o $(Build.ArtifactStagingDirectory)/ProfileContext_Migration.sql --project Ata.Investment.Api --context ProfileContext'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Generate SQL migration script for Auth Context'
+  inputs:
+    command: 'custom'
+    workingDirectory: '$(system.defaultWorkingDirectory)'
+    custom: 'ef'
+    arguments: 'migrations script --idempotent -o $(Build.ArtifactStagingDirectory)/AuthContext_Migration.sql --project Ata.Investment.Api --context AuthDbContext'
+
+# -------- EF CORE section END -----------
+
+
+# ======== PUBLISH section BEGIN ========
+- task: DotNetCoreCLI@2
+  displayName: 'Dotnet publish build'
+  inputs:
+    command: publish
+    publishWebProjects: True
+    arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'ata-investment'
+# ------- PUBLISH section END -----------

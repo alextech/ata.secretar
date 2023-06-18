@@ -1,0 +1,261 @@
+@using MediatR
+@using TimeZoneConverter
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.Household
+@using Ata.Investment.Profile.Domain.KYC
+@inject IMediator MediatR
+
+@if (KycDocument != null && Meeting != null)
+{
+    bool ro = Meeting.IsCompleted;
+
+    <EditForm id="meetingView" Model="@KycDocument">
+
+      <div>Profile for:</div>
+      <div style="grid-column: 2/6">
+        @if (Meeting.Household.IsJoint)
+        {
+            <label><InputCheckbox @bind-Value="@ForFirstClient" disabled="@(!ForSecondClient || ro)" /><span class="@(!ForSecondClient ? "disabled" :"")"></span>@Meeting.Household.PrimaryClient.Name</label>
+            <label><InputCheckbox @bind-Value="@ForSecondClient" disabled="@(!ForFirstClient || ro)" /><span class="@(!ForFirstClient ? "disabled" : "")"></span>@Meeting.Household.JointClient.Name</label>
+        }
+        else
+        {
+            <p>@KycDocument.PrimaryClient.Name</p>
+        }
+      </div>
+
+      <div style="display: contents;">
+          <label>Client Name: </label><input type="text" value="@KycDocument.PrimaryClient.Name" disabled>
+          <label>Email: </label><input type="text" value="@KycDocument.PrimaryClient.Email" disabled>
+          <label><!--<input type="radio" name="isInitiator" value="primary"> Initiator --></label>
+      </div>
+
+      @if (KycDocument.IsJoint)
+      {
+          <div style="display: contents;">
+              <label>Joint Client Name: </label><input type="text" value="@KycDocument.JointClient.Name" disabled>
+              <label>Joint Email: </label><input type="text" value="@KycDocument.JointClient.Email" disabled>
+              <label><!--<input type="radio" name="isInitiator" value="joint"> Initiator--></label>
+          </div>
+      }
+
+      <label>Date and Time:</label>
+      <div class="meetingDateTime">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text"><svg aria-hidden="true" data-prefix="far" data-icon="calendar-alt" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-inline--fa fa-calendar-alt fa-w-14 fa-3x"><path fill="currentColor" d="M148 288h-40c-6.6 0-12-5.4-12-12v-40c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v40c0 6.6-5.4 12-12 12zm108-12v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 96v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm-96 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm192 0v-40c0-6.6-5.4-12-12-12h-40c-6.6 0-12 5.4-12 12v40c0 6.6 5.4 12 12 12h40c6.6 0 12-5.4 12-12zm96-260v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V112c0-26.5 21.5-48 48-48h48V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h128V12c0-6.6 5.4-12 12-12h40c6.6 0 12 5.4 12 12v52h48c26.5 0 48 21.5 48 48zm-48 346V160H48v298c0 3.3 2.7 6 6 6h340c3.3 0 6-2.7 6-6z" class=""></path></svg></span>
+          </div>
+            <input class="form-control" type="text" name="date" min="0" step="1" data-title="Month Day, Year" @bind="@DateComponent" @bind:format="MMMM dd, yyyy" readonly="@ro" />
+        </div>
+
+        <input type="text" name="time" @bind="@TimeComponent" @bind:format="H:mm" readonly="@ro" />
+      </div>
+
+      <label>Purpose of meeting:</label>
+      <input type="text" name="purpose" @bind="@KycDocument.Purpose"  readonly="@ro"  />
+
+      <label>Advisor: </label>
+      <select @bind="@_advisorGuid" disabled="@ro">
+          @foreach (Advisor advisor in AvailableAdvisors)
+          {
+              <option value="@advisor.Guid.ToString()">@advisor.Name</option>
+          }
+      </select>
+
+      <label style="grid-column: 1 / 2">Service Standard:</label>
+      <select @bind="@KycDocument.ServiceStandard" disabled="@ro">
+          <option value="@ServiceStandard.WealthAccumulation">Wealth Accumulation Program</option>
+          <option value="@ServiceStandard.Safeguarding">Safeguarding Your Future Program</option>
+          <option value="@ServiceStandard.CapitalPreservation">Capital Preservation and Legacy Program</option>
+          <option value="@ServiceStandard.ExecutiveServices">Executive Services Program</option>
+      </select>
+
+      <label class="otherInitiator"><!-- <input type="radio" name="isInitiator" id="advisorInitiator" value="advisor" checked> Initiator--></label>
+
+      <div class="other_row" style="display: contents" data-first-other="true">
+          @* <label for="other_0">Other attendees:</label> *@
+          @* <input type="text" name="other" id="other_0" data-other-index="0"> *@
+          @* <label class="otherInitiator"><input type="radio" name="isInitiator" value="other" data-other-index="0"> Initiator</label> *@
+      </div>
+    </EditForm>
+
+    <Modal Title="Confirm remove client from meeting." ModalType="@ModalType.YesNo" NoHandler="@RestoreClientSelection" YesHandler="@ToggleClients" @ref="@_removeClientModal">
+        Data already entered for the client will be removed.
+    </Modal>
+}
+
+@code
+{
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [Parameter]
+    public IEnumerable<Advisor> AvailableAdvisors { get; set; } = new List<Advisor>();
+
+    [Parameter]
+    public EventCallback<DocumentMembers> OnSingleJointToggle { get; set; }
+
+    private Modal _removeClientModal;
+
+    private Guid __advisorGuid;
+
+    private string _advisorGuid
+    {
+        get => __advisorGuid.ToString();
+        set
+        {
+            __advisorGuid = Guid.Parse(value);
+            Meeting.SwitchAdvisor(AvailableAdvisors.Single(a => a.Guid == __advisorGuid));
+        }
+    }
+
+    private bool _forFirstClient;
+    private bool _forSecondClient;
+
+    private bool _toggleFirst;
+    private bool ForFirstClient
+    {
+        get => _forFirstClient;
+        set
+        {
+            _forFirstClient = value;
+
+            if (!_forFirstClient)
+            {
+                _toggleFirst = true;
+                _toggleSecond = false;
+
+                _removeClientModal.Open();
+            }
+            else
+            {
+                ToggleClients();
+            }
+        }
+    }
+
+    private bool _toggleSecond;
+    private bool ForSecondClient
+    {
+        get => _forSecondClient;
+        set
+        {
+            _forSecondClient = value;
+
+            if (!_forSecondClient)
+            {
+                _toggleFirst = false;
+                _toggleSecond = true;
+
+                _removeClientModal.Open();
+            }
+            else
+            {
+                ToggleClients();
+            }
+        }
+    }
+
+    private readonly TimeZoneInfo _timeZoneInfo = TZConvert.GetTimeZoneInfo("Eastern Standard Time");
+
+    private DateTimeOffset DateComponent
+    {
+        get => TimeZoneInfo.ConvertTimeFromUtc(KycDocument.Date.DateTime, _timeZoneInfo);
+        set => Meeting.Date = KycDocument.Date = TimeZoneInfo.ConvertTimeToUtc(new DateTime(value.Year, value.Month, value.Day, KycDocument.Date.Hour, KycDocument.Date.Minute, 0), _timeZoneInfo);
+    }
+
+    private DateTimeOffset TimeComponent
+    {
+        get => TimeZoneInfo.ConvertTimeFromUtc(KycDocument.Date.DateTime, _timeZoneInfo);
+        set => Meeting.Date = KycDocument.Date = TimeZoneInfo.ConvertTimeToUtc(new DateTime(KycDocument.Date.Year, KycDocument.Date.Month, KycDocument.Date.Day, value.Hour, value.Minute, 0), _timeZoneInfo);
+    }
+
+    private Guid _currentMeeting = Guid.Empty;
+    protected override void OnParametersSet()
+    {
+        if (KycDocument == null || KycDocument.MeetingId == _currentMeeting) return;
+
+        _currentMeeting = KycDocument.MeetingId;
+
+        if (KycDocument.IsJoint)
+        {
+            _forFirstClient = true;
+            _forSecondClient = true;
+        }
+
+        else if (Meeting.Household.PrimaryClient.Guid == KycDocument.PrimaryClient.Guid)
+        {
+            _forFirstClient = true;
+            _forSecondClient = false;
+        }
+
+        else
+        {
+            _forFirstClient = false;
+            _forSecondClient = true;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        __advisorGuid = KycDocument.Advisor.Guid;
+    }
+
+    private void ToggleClients()
+    {
+        _toggleFirst = _toggleSecond = false;
+
+        if (_forFirstClient && _forSecondClient)
+        {
+            PClient jointClient =
+                KycDocument.PrimaryClient.Guid != Meeting.Household.PrimaryClient.Guid ?
+                    new PClient(Meeting.Household.PrimaryClient) :
+                    new PClient(Meeting.Household.JointClient);
+
+            KycDocument.SwitchToJointWith(jointClient);
+            OnSingleJointToggle.InvokeAsync(DocumentMembers.Joint);
+
+            return;
+        }
+
+        if (_forFirstClient)
+        {
+            KycDocument.SwitchToSingleWith(new PClient(Meeting.Household.PrimaryClient));
+            OnSingleJointToggle.InvokeAsync(DocumentMembers.Single);
+
+            return;
+        }
+
+        if (_forSecondClient)
+        {
+            KycDocument.SwitchToSingleWith(new PClient(Meeting.Household.JointClient));
+            OnSingleJointToggle.InvokeAsync(DocumentMembers.Single);
+
+            return;
+        }
+    }
+
+    // without activating toggle clients
+    private void RestoreClientSelection()
+    {
+        if (_toggleFirst)
+        {
+            _forFirstClient = !_forFirstClient;
+        }
+
+        if (_toggleSecond)
+        {
+            _forSecondClient = !_forSecondClient;
+        }
+
+        _toggleFirst = false;
+        _toggleSecond = false;
+    }
+
+}

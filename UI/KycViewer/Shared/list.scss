@@ -1,0 +1,68 @@
+@import "~atauitoolkit/variables";
+
+table {
+    border-collapse: collapse!important;
+}
+
+thead tr {
+    vertical-align:top;
+    border-top:1px solid #ddd;
+}
+
+th {
+    top: 0;
+    background-color: $ata-orange;
+    padding: .4rem;
+}
+
+td, th {
+    /*width: 1px;*/
+    border: 1px solid #dee2e6;
+}
+
+tbody>tr:nth-child(even){background-color:rgba(0,0,0,.05);}
+tbody>tr:nth-child(odd){background-color:#fff;}
+
+tr.selected {
+    /* background-color: rgba(199, 28, 10, 0.5) !important; */
+    background-color: rgba(24, 121, 195, 0.5) !important;
+}
+
+tbody a,
+#historyTable td {
+    padding: 0.4em;
+}
+
+tbody a, tbody a:hover {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+tbody tr:hover, .selected {
+    background-color: rgba(24, 121, 195, 0.5) !important;
+}
+
+#meetingsArea input[type=checkbox], #meetingsArea input[type=checkbox]:checked {
+    opacity: 1 !important;
+}
+
+#profileList {
+    width: 100%;
+}
+
+#profileList td:first-child {
+    text-align: center;
+}
+
+#profileList th:first-child {
+    width: 1em;
+}
+
+#meetingsAreaToolbar {
+    width: 100%;
+}
+
+#meetingListItemControls {
+    float: right;
+}

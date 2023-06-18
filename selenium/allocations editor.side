@@ -1,0 +1,85 @@
+{
+  "id": "4341cbd8-4d87-4e84-8cf1-9dd6edc21d91",
+  "version": "2.0",
+  "name": "allocations editor",
+  "url": "https://localhost:5001",
+  "tests": [{
+    "id": "23de3278-f3e8-4bae-9338-df3d73147228",
+    "name": "create new version",
+    "commands": [{
+      "id": "f32e088e-cfc2-481e-a3e9-f0a3cded06f5",
+      "comment": "",
+      "command": "open",
+      "target": "/allocations",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "a084b222-14ea-46f5-88d6-35ebcce92e6a",
+      "comment": "",
+      "command": "setWindowSize",
+      "target": "1708x762",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "7eda5690-0714-48fe-9f69-f0ab0b368e2b",
+      "comment": "",
+      "command": "assertNotEditable",
+      "target": "name=AllocationList[0].ScoreRange.Min",
+      "targets": [
+        ["id=AllocationList_0__ScoreRange_Min", "id"],
+        ["name=AllocationList[0].ScoreRange.Min", "name"],
+        ["css=#AllocationList_0__ScoreRange_Min", "css:finder"],
+        ["xpath=//input[@id='AllocationList_0__ScoreRange_Min']", "xpath:attributes"],
+        ["xpath=//input[2]", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "ae9621a5-9f43-4fb6-b4e9-1401b8ae5385",
+      "comment": "",
+      "command": "click",
+      "target": "id=Version",
+      "targets": [
+        ["id=Version", "id"],
+        ["name=Version", "name"],
+        ["css=#Version", "css:finder"],
+        ["xpath=//input[@id='Version']", "xpath:attributes"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "d0f08f83-76eb-482e-8f2a-b642a6d70f4f",
+      "comment": "",
+      "command": "type",
+      "target": "id=Version",
+      "targets": [
+        ["id=Version", "id"],
+        ["name=Version", "name"],
+        ["css=#Version", "css:finder"],
+        ["xpath=//input[@id='Version']", "xpath:attributes"],
+        ["xpath=//input", "xpath:position"]
+      ],
+      "value": "1809"
+    }, {
+      "id": "3fcbdca7-04a5-4b38-bd8a-ea46500b18dc",
+      "comment": "",
+      "command": "click",
+      "target": "xpath=//input[@value='Publish']",
+      "targets": [
+        ["css=form > input:nth-child(3)", "css:finder"],
+        ["xpath=//input[@value='Publish']", "xpath:attributes"],
+        ["xpath=//form/input", "xpath:position"]
+      ],
+      "value": ""
+    }]
+  }],
+  "suites": [{
+    "id": "e54c17d4-43f0-4f91-96c0-eee0586f94d4",
+    "name": "Default Suite",
+    "persistSession": false,
+    "parallel": false,
+    "timeout": 300,
+    "tests": ["23de3278-f3e8-4bae-9338-df3d73147228"]
+  }],
+  "urls": ["https://localhost:5001/"],
+  "plugins": []
+}

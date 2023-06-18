@@ -1,0 +1,14 @@
+﻿@inject NavigationManager NavigationManager
+
+<p>Redirecting...</p>
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        string uri = NavigationManager.Uri;
+        uri = uri.Replace(NavigationManager.BaseUri, "");
+
+        NavigationManager.NavigateTo($"/login?referer={uri}", true);
+    }
+}

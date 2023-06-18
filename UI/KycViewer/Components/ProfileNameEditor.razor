@@ -1,0 +1,159 @@
+﻿@using Ata.Investment.Profile.Domain.Profile
+@using Ata.Investment.Profile.Cmd.Profile
+@using Ata.Investment.Profile.Domain.KYC
+@using KycViewer.Validators
+
+@implements IDisposable;
+
+@inject NavigationManager NavigationManager
+
+<EditForm id="profileInfo" Model="@Profile" name="profile_objectives" autocomplete="off">
+    <ObservableValidator
+        ValidatorType="@(typeof(ProfileAccountsValidator))"
+        NavigationPath="@(QLayout.ClientPath)" />
+    <datalist id="commonProfiles">
+        <option value="Making a big purchase"></option>
+        <option value="Retirement"></option>
+        <option value="Children's education"></option>
+        <option value="Building a nest egg for the future"></option>
+    </datalist>
+
+    <ProfileStatus Profile="@Profile"/>
+
+    <ata-panel data-title="@(_personName): @Profile.Name" id="">
+        @if (!ReadOnly)
+        {
+            <svg slot="icons" @onclick="@(() => _removeProfileModal.Open())" id="deleteProfile_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+                <path d="M323.1 441l53.9-53.9c9.4-9.4 9.4-24.5 0-33.9L279.8 256l97.2-97.2c9.4-9.4 9.4-24.5 0-33.9L323.1 71c-9.4-9.4-24.5-9.4-33.9 0L192 168.2 94.8 71c-9.4-9.4-24.5-9.4-33.9 0L7 124.9c-9.4 9.4-9.4 24.5 0 33.9l97.2 97.2L7 353.2c-9.4 9.4-9.4 24.5 0 33.9L60.9 441c9.4 9.4 24.5 9.4 33.9 0l97.2-97.2 97.2 97.2c9.3 9.3 24.5 9.3 33.9 0z"></path>
+            </svg>
+        }
+
+        <section slot="body" class="profileNamePanelBody">
+            <img src="/_content/KycViewer/icons/@(Profile.Meta.Icon).png" style="grid-row-start: 1; grid-row-end: 3;" alt="icon" />
+
+            <div style="grid-column-start: 2; grid-column-end: 10" class="flex-row">
+                <label for="obj_profileName" class="longField">Profile name: </label>
+                <div class="input-group mb-3">
+                    <input type="text" value="@Profile.Name" class="form-control" aria-label="Profile name" aria-describedby="basic-addon2" disabled>
+                    <div class="input-group-append">
+                        @if (!ReadOnly)
+                        {
+                            <button class="btn btn-info" type="button" @onclick="@OpenRenameProfile">Edit</button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <label for="obj_initialInvestment">Initial Investment:</label>
+            <InputNumeric type="currency" @bind-Value="@Profile.InitialInvestment" data-id="obj_initialInvestment" readonly="@ReadOnly"/>
+
+            @{
+                Accounts a = Profile.Accounts;
+            }
+
+            @if (Profile.IsJoint == false)
+            {
+                <label><InputCheckbox @bind-Value="@a.RRSP" disabled="@ReadOnly"/><span></span>RRSP</label>
+                <label><InputCheckbox @bind-Value="@a.LIRA" disabled="@ReadOnly"/><span></span>LIRA</label>
+                <label><InputCheckbox @bind-Value="@a.TFSA" disabled="@ReadOnly"/><span></span>TFSA</label>
+                <label><InputCheckbox @bind-Value="@a.LIF" disabled="@ReadOnly"/><span></span>LIF</label>
+                <label><InputCheckbox @bind-Value="@a.RIF" disabled="@ReadOnly"/><span></span>RIF</label>
+            }
+            else
+            {
+                <span></span><span></span><span></span><span></span><span></span>
+            }
+            <label><InputCheckbox @bind-Value="@a.RESP" disabled="@ReadOnly"/><span></span>RESP</label>
+            <label><InputCheckbox @bind-Value="@a.NonReg" disabled="@ReadOnly"/><span></span>Non-Reg</label>
+            <label><InputCheckbox @bind-Value="@a.RDSP" disabled="@ReadOnly"/><span></span>RDSP</label>
+
+            <label for="obj_monthlyCommitment">Monthly Commitment: </label>
+            <InputNumeric type="currency" @bind-Value="@Profile.MonthlyCommitment" data-id="obj_monthlyCommitment" readonly="@ReadOnly"/>
+
+        </section>
+    </ata-panel>
+</EditForm>
+
+<Modal Title="Confirm remove profile" ModalType="@ModalType.YesNo" YesHandler="@RemoveProfile" @ref="@_removeProfileModal">
+    Confirm removing @Profile.Name?
+</Modal>
+
+
+<Modal Title="Rename profile" ModalType="@ModalType.OkCancel" EnableSubmit="@_isValid" SubmitHandler="@RenameProfile" @ref="@_renameProfileModal">
+    <EditForm Model="@ProfileRenameVo" class="profileRenameForm">
+        <ObservableValidator
+            ValidatorType="@(typeof(ProfileRenameValidator))"
+            OnValidationStateChanged="@((isValid) => _isValid = isValid)" />
+
+        <ImageSelector
+            BasePath="/_content/KycViewer/icons"
+            Options="@(new List<string> {"dollar", "education", "nest-egg", "purchase", "retirement"})"
+            @bind-Value="@ProfileRenameVo.Icon"
+            />
+
+        <RealtimeInputText list="commonProfiles" @bind-Value="@ProfileRenameVo.Name" name="profileName" class="form-control"/>
+    </EditForm>
+</Modal>
+
+@code {
+
+    private Modal _removeProfileModal;
+
+    private Modal _renameProfileModal;
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    [Parameter]
+    public Profile Profile { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    private FluentValidationValidator _formValidator;
+
+    private string _personName => Profile.PrimaryClient.Name + (Profile.IsJoint ? " and " + Profile.JointClient?.Name : "");
+
+    private bool _isValid;
+
+    private ProfileRenameVO ProfileRenameVo { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        // Console.WriteLine("ProfileNameEditor path: " + QLayout.ClientPath);
+        ProfileRenameVo = new ProfileRenameVO(Profile);
+    }
+
+    public void Dispose()
+    {
+    }
+
+    private async Task RemoveProfile()
+    {
+        string parentClientUrl = $"{QLayout.BaseUrl}#{(Profile.IsJoint ? "/" : $"/client/{Profile.PrimaryClient.Guid}/info")}";
+
+        KycDocument.RemoveProfile(Profile);
+        await QLayout.SaveManagedMeeting();
+        QLayout.ValidationObserver.ProfileRemovedHandler(Profile);
+
+        NavigationManager.NavigateTo(parentClientUrl);
+    }
+
+    private void OpenRenameProfile()
+    {
+        ProfileRenameVo = new ProfileRenameVO(Profile);
+        _renameProfileModal.Open();
+    }
+
+    private async Task RenameProfile()
+    {
+        Profile.Name = ProfileRenameVo.Name;
+        Profile.Meta.Icon = ProfileRenameVo.Icon;
+        QLayout.Navigation.SyncUI();
+        QLayout.Timeline.SyncUI();
+        await QLayout.SaveManagedMeeting();
+    }
+}

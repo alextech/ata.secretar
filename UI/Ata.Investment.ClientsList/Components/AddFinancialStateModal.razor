@@ -1,0 +1,24 @@
+<Modal Title="Add Financial State" @ref="_parentDialogue" Class="addFinancialStateModal">
+    <button class="btn btn-success" @onclick="@(() => MakeChoice(true))">Copy last state</button>
+    <button class="btn btn-success" @onclick="@(() => MakeChoice(false))">Start with blank fields</button>
+</Modal>
+
+@code {
+
+    private Modal _parentDialogue;
+
+    [Parameter]
+    public EventCallback<bool> OnChoiceSelection { get; set; }
+
+    public void Open()
+    {
+        _parentDialogue.Open();
+    }
+
+    private async Task MakeChoice(bool copyLast)
+    {
+        await OnChoiceSelection.InvokeAsync(copyLast);
+        _parentDialogue.Close();
+    }
+
+}

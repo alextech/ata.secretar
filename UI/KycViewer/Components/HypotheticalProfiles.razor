@@ -1,0 +1,20 @@
+﻿@inherits InputBase<int>
+
+<ata-hypothetical-profiles disabled="@Disabled" @bind-Value="@CurrentValue"  @bind-Value:event="onchange" IsAdvisor="@IsAdvisor" />
+
+@code
+{
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public bool IsAdvisor { get; set; }
+
+    protected override bool TryParseValueFromString(string value, out int result, out string validationErrorMessage)
+    {
+        result = int.Parse(value);
+        validationErrorMessage = null;
+        return true;
+    }
+
+}

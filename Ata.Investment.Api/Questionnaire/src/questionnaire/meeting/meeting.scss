@@ -1,0 +1,71 @@
+@import "../../styleUtils/effects";
+@import "../../styleUtils/mixins";
+
+#meetingView {
+  @include shadow();
+  height: 95%;
+  padding: 1em;
+  color: $gray-800;
+
+  background-color: #ffffff;
+  user-select: none;
+  display: grid;
+  grid-template-columns: 10em 1fr 5.5em 1fr 6em;
+  grid-row-gap: 0.7em;
+  grid-auto-rows: 2.3em;
+  align-items: center;
+  grid-column-gap: 1em;
+
+  .meetingDateTime {
+    display: flex;
+    grid-column: 2/6;
+    .input-group {
+      width: 15em;
+    }
+
+    input[name="time"] {
+      margin-left: 1em;
+      width: 5em;
+      text-align: right;
+    }
+  }
+
+  select {
+    height: 2.5em;
+  }
+
+  input[name="purpose"] {
+    grid-column: 2/6;
+  }
+
+  .otherInitiator {
+    grid-column: 3/6;
+  }
+
+  .other_name {
+    grid-column: 2/3;
+  }
+
+  .checkbox {
+    input[type="checkbox"], input[type="checkbox"]:checked {
+      margin-left: 0;
+      opacity: 0;
+
+      + label {
+        margin-left: -1em;
+
+        &:after {
+          font-size: 1.2em;
+          margin-left: 0.3em;
+        }
+      }
+    }
+    input[type="checkbox"] + label::after {
+      @extend .checkboxUnchecked;
+    }
+
+    input[type="checkbox"]:checked + label::after{
+      @extend .checkboxChecked;
+    }
+  }
+}

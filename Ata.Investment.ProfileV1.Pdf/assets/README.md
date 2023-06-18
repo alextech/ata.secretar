@@ -1,0 +1,1 @@
+This folder is copied to build directory using CopyToOutputDirectory build option.

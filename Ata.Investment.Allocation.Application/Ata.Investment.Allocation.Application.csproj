@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>Ata.Investment.Allocation.Application</RootNamespace>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Allocation\Ata.Investment.Allocation.Cmd\Ata.Investment.Allocation.Cmd.csproj" />
+      <ProjectReference Include="..\Ata.Investment.Allocation.Data\Ata.Investment.Allocation.Data.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="8.1.1" />
+      <PackageReference Include="MediatR" Version="9.0.0" />
+      <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+    </ItemGroup>
+
+</Project>

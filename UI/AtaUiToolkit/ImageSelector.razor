@@ -1,0 +1,44 @@
+﻿@inherits InputBase<string>
+
+<section class="imageSelector" style="@Style">
+    <img @onclick="@(() => _isVisible = !_isVisible)" src="@BasePath/@(CurrentValue).png" class="selectedImage" alt="icon"/>
+    <span @onclick="@(() => _isVisible = !_isVisible)"><i class="fas fa-angle-down"></i></span>
+    <ul style="display: @(_isVisible ? "block" : "none")">
+        @foreach (string option in Options)
+        {
+            <li @onclick=@(() => OnImageClicked(option))><img src="@BasePath/@(option).png" alt="" /> </li>
+        }
+    </ul>
+</section>
+
+@code {
+    [Parameter]
+    public string BasePath { get; set; }
+
+    [Parameter]
+    public List<string> Options { get; set; }
+
+    [Parameter]
+    public string Style { get; set; }
+
+    private bool _isVisible;
+
+    private void OnImageClicked(string option)
+    {
+        _isVisible = false;
+
+        if (CurrentValue == option)
+        {
+            return;
+        }
+
+        CurrentValue = option;
+    }
+
+    protected override bool TryParseValueFromString(string value, out string result, out string validationErrorMessage)
+    {
+        result = value;
+        validationErrorMessage = null;
+        return true;
+    }
+}

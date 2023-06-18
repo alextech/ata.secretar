@@ -1,0 +1,279 @@
+@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Profile
+@using Ata.Investment.Api.Components.Shared
+@using KycViewer.Components
+@using KycViewer.Validators
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.Points
+
+@using Range = SharedKernel.Range;
+
+@inject NavigationManager NavigationManager
+
+@implements IDisposable;
+
+@if (_profile != null)
+{
+
+bool ro = Meeting.IsCompleted;
+
+<EditForm Model="@_profile" id="profileExpectationsView">
+    <ObservableValidator ValidatorType="@(typeof(ExpectationsValidator))" NavigationPath="@QLayout.ClientPath" OnValidationStateChanged="@((isValid) => _isValid = isValid)" @ref="@_formValidator"/>
+    <ProfileStatus Profile="@_profile" />
+
+    <ProfileNameEditor Profile="@_profile" ReadOnly="@ro" />
+
+    <ata-panel data-title="Expectations & Experience" id="expectations">
+        <section slot="body" class="radio-groups">
+
+            @* MFDA: Q1 *@
+            <div id="timehorizon" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="fas fa-hourglass-half pointsTowardsIcon"></i> (MFDA Q1: Towards Time) </span>} When do you expect to need to withdraw a significant portion (1/3 or more) of the money in your investment portfolio?
+            </div></div>
+            <InputRadioGroup Name="timehorizon" @bind-Value="@TimeHorizon">
+                <label class="radio-group-label"><InputRadio Value="0"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Safety)" : "")} Less than 1 year")</span></label>
+                <label class="radio-group-label"><InputRadio Value="1"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Conservative)" : "")} 1 to 3 years")</span></label>
+                <label class="radio-group-label"><InputRadio Value="4"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Growth)" : "")} 4 to 7 years")</span></label>
+                <label class="radio-group-label"><InputRadio Value="8"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Aggressive Growth)" : "")} 8 to 15 years")</span></label>
+                <label class="radio-group-label"><InputRadio Value="16" disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Aggressive Growth)" : "")} 16 years or more")</span></label>
+            </InputRadioGroup>
+
+            @* MFDA: Q3 *@
+            <div id="goal" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="fas fa-crosshairs pointsTowardsIcon"></i> (MFDA Q3: Towards Goal) </span>} What is your primary goal for this portfolio:
+            </div></div>
+            <InputRadioGroup Name="goal" @bind-Value="@_profile.Goal">
+                <label class="radio-group-label"><InputRadio Value="1" disabled="@ro" /><span>Safety: I want to keep the money I have invested safe from short-term losses or readily available for short-term needs. (Investments that will satisfy this objective include GICs and money market funds)</span></label>
+                <label class="radio-group-label"><InputRadio Value="2" disabled="@ro" /><span>Income: I want to generate a steady stream of income from my investments and I am less concerned about growing the value of my investments.  (Investments that will satisfy this objective include fixed income investments such as funds that invest in bonds)</span></label>
+                <label class="radio-group-label"><InputRadio Value="3" disabled="@ro" /><span>Balanced: I want to generate some income with some opportunity for the investments to grow in value. (A balanced fund or a portfolio that includes at least 40% in fixed income investments and no more than 60% in equity funds  will satisfy this objective)</span></label>
+                <label class="radio-group-label"><InputRadio Value="4" disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Aggressive Growth)" : "")} Growth: I want to generate long-term growth from my investments.  (A portfolio with a relatively high proportion of funds that invest in equities will satisfy this objective if you also have a long time horizon and are willing and able to accept more risk)")</span></label>
+            </InputRadioGroup>
+
+            @* MFDA: Q8 *@
+            <div id="percentageOfSavings" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="fas fa-warehouse pointsTowardsIcon"></i> (MFDA Q8: Towards Risk Capacity) </span>} This investment account represents approximately what percentage of your total savings and investments. (Total savings and investments include all the money you have in cash savings, GICs, savings bonds, mutual funds, stocks and bonds)?
+            </div></div>
+            <InputRadioGroup Name="percentageOfSavings" @bind-Value="@_profile.PercentageOfSavings">
+                <label class="radio-group-label"><InputRadio Value="10" disabled="@ro" /><span>@($" {(IsAdvisor ? "(10)" : "")} Less than 25%")</span></label>
+                <label class="radio-group-label"><InputRadio Value="5"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(5)" : "")} 25%-50%")</span></label>
+                <label class="radio-group-label"><InputRadio Value="4"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(4)" : "")} 51%-75%")</span></label>
+                <label class="radio-group-label"><InputRadio Value="2"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(2)" : "")} More than 75%")</span></label>
+            </InputRadioGroup>
+
+            @* MFDA: Q10 *@
+            <div id="decisionMaking" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="far fa-frown pointsTowardsIcon"></i> (MFDA Q10: Towards Risk Attitude) </span>} In making financial and investment decisions you are:
+            </div></div>
+            <InputRadioGroup Name="decisionMaking" @bind-Value="@_profile.DecisionMaking">
+                <label class="radio-group-label"><InputRadio Value="0"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(0)" : "")} Very conservative and try to minimize risk and avoid the possibility of any loss")</span></label>
+                <label class="radio-group-label"><InputRadio Value="4"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(4)" : "")} Conservative but willing to accept a small amount of risk")</span></label>
+                <label class="radio-group-label"><InputRadio Value="6"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(6)" : "")} Willing to accept a moderate level of risk and tolerate losses to achieve potentially higher returns")</span></label>
+                <label class="radio-group-label"><InputRadio Value="10" disabled="@ro" /><span>@($" {(IsAdvisor ? "(10)" : "")} Aggressive and typically take on significant risk and are willing to tolerate large losses for the potential of achieving higher returns")</span></label>
+            </InputRadioGroup>
+
+            @* MFDA: Q11: *@
+            <div id="decline" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="far fa-frown pointsTowardsIcon"></i> (MFDA Q11: Towards Risk Attitude) </span>} The value of an investment portfolio will generally go up and down over time. Assuming that you have invested $10,000, how much of a decline in your investment portfolio could you tolerate in a 12 month period?
+            </div></div>
+            <InputRadioGroup Name="decline" @bind-Value="@_profile.Decline">
+                <label class="radio-group-label"><InputRadio Value="0"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(0)" : "")} I could not tolerate any loss")</span></label>
+                <label class="radio-group-label"><InputRadio Value="3"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(3)" : "")} -$300 (-3%)")</span></label>
+                <label class="radio-group-label"><InputRadio Value="6"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(6)" : "")} -$1,000 (-10%)")</span></label>
+                <label class="radio-group-label"><InputRadio Value="8"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(8)" : "")} -$2,000 (-20%)")</span></label>
+                <label class="radio-group-label"><InputRadio Value="10" disabled="@ro" /><span>@($" {(IsAdvisor ? "(10)" : "")} More than -$2,000 (more than -20%)")</span></label>
+            </InputRadioGroup>
+
+            @* MFDA: Q12 *@
+            <div id="lossesOrGains" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="far fa-frown pointsTowardsIcon"></i> (MFDA Q12: Towards Risk Attitude) </span>} When you are faced with a major financial decision, are you more concerned about the possible losses or the possible gains?
+            </div></div>
+            <InputRadioGroup name="lossesOrGains" @bind-Value="@_profile.LossesOrGains">
+                <label class="radio-group-label"><InputRadio Value="0"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(0)" : "")} Always the possible losses")</span></label>
+                <label class="radio-group-label"><InputRadio Value="3"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(3)" : "")} Usually the possible losses")</span></label>
+                <label class="radio-group-label"><InputRadio Value="6"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(6)" : "")} Usually the possible gains")</span></label>
+                <label class="radio-group-label"><InputRadio Value="10" disabled="@ro" /><span>@($" {(IsAdvisor ? "(10)" : "")} Always the possible gains")</span></label>
+            </InputRadioGroup>
+
+            @* MFDA: Q14 *@
+            <div id="actionOnLosses" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="far fa-frown pointsTowardsIcon"></i> (MFDA Q14: Towards Risk Attitude) </span>} From September 2008 through November 2008, North American stock markets lost over 30%. If you currently owned an investment that lost over 30% in 3 months you would:
+            </div></div>
+            <InputRadioGroup name="actionOnLosses" @bind-Value="@_profile.ActionOnLosses">
+                <label class="radio-group-label"><InputRadio Value="0"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(0)" : "")} Sell all of the remaining investment to avoid further losses")</span></label>
+                <label class="radio-group-label"><InputRadio Value="3"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(3)" : "")} Sell a portion of the remaining investment to protect some of your capital")</span></label>
+                <label class="radio-group-label"><InputRadio Value="5"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(5)" : "")} Hold onto the investment and not sell any of the investment in the hopes of higher future returns")</span></label>
+                <label class="radio-group-label"><InputRadio Value="10" disabled="@ro" /><span>@($" {(IsAdvisor ? "(10)" : "")} Buy more of the investment now that prices are lower")</span></label>
+            </InputRadioGroup>
+
+            @* MFDA: Q13 *@
+            <div id="lossvsgainprofile" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="far fa-frown pointsTowardsIcon"></i> (MFDA Q13: Towards Risk Attitude) </span>}
+                The chart shows the greatest one year loss and the highest one year gain on four different investments of $10,000. <br/>
+                Given the potential gain or loss in any one year, which investment would you likely invest your money in?
+            </div></div>
+            <LossVsGainProfiles @bind-Value="@_profile.LossVsGainProfile" IsAdvisor="IsAdvisor" Disabled="@ro" />
+
+            @* MFDA: Q15 *@
+            <div id="hypotheticalProfile" class="animationBox"><div class="question">
+                @if(IsAdvisor) { <span><i class="far fa-frown pointsTowardsIcon"></i> (MFDA Q15: Towards Risk Attitude) </span>}
+                Investments with higher returns typically involve greater risk. The charts below show hypothetical annual returns (annual gains and losses) for four different investment portfolios over a 10 year period. Keeping in mind how the returns fluctuate, which investment portfolio would you be most comfortable holding?
+            </div></div>
+            <HypotheticalProfiles @bind-Value="@_profile.HypotheticalProfile" IsAdvisor="IsAdvisor" Disabled="@ro" />
+
+        </section>
+    </ata-panel>
+
+    <button @onclick="@NavigateNext" class="btn btn-success next @(_isValid ? "" : "disabled")" style="grid-area: next">Next</button>
+</EditForm>
+
+    <Modal Title="Goal Timeline Adjustment" @ref="_adjustmentDialogue"
+           Closeable="@false" ModalType="ModalType.OkCancel"
+           SubmitHandler="@OnAdjustmentSelectionHandler" CancelHandler="@OnAdjustmentCancelHandler">
+        <p>
+
+
+            @if (_selectedTimeHorizonRange.Max < _profile.TimeHorizon.Range.Min)
+            {
+                <span>
+                    Selected time horizon is earlier than goal's timespan. <br/>
+                    Based on this selection, 1/3 of portfolio would be withdrawn at <b>latest</b> in
+                    <b>@_selectedTimeHorizonRange.Max</b>.
+                </span>
+            }
+
+            @if (_selectedTimeHorizonRange.Min > _profile.TimeHorizon.Range.Max)
+            {
+                <span>
+                    Selected time horizon is later than goal's timespan. <br />
+                    Based on this selection, 1/3 of portfolio would be withdrawn at <b>earliest</b> in
+                    <b>@_selectedTimeHorizonRange.Min</b>.
+                </span>
+            }
+            But current goal range is between @_profile.TimeHorizon.Range.Min and @(_profile.TimeHorizon.Range.Max).
+            <br />
+            <br />
+            Update goal range to match selected option?
+        </p>
+    </Modal>
+}
+
+@code
+{
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [Parameter]
+    public Guid ProfileId { get; set; }
+
+    [Parameter]
+    public bool IsAdvisor { get; set; } = false;
+
+    private Profile _profile;
+
+    private Range _selectedTimeHorizonRange;
+    private int TimeHorizon
+    {
+        get => _timeHorizon;
+        set
+        {
+            int originYear = KycDocument.Date.Year;
+            _selectedTimeHorizonRange = ProfilePoints.MatchRiskRange(value) + originYear;
+            /* Currently nags for every little change, which is annoying.
+                if (!_profile.TimeHorizon.Range.Intersects(_selectedTimeHorizonRange))
+                {
+                    _isTimeAdjustmentOpened = true;
+                    _adjustmentDialogue.Open();
+                    return;
+                }
+                _profile.TimeHorizon.WithdrawYear = _profile.TimeHorizon.Range.LowestIntersectionWith(_selectedTimeHorizonRange);
+            */
+
+            _profile.TimeHorizon.Range = _selectedTimeHorizonRange;
+            _profile.TimeHorizon.ResetThirdWithdrawTime();
+            _timeHorizon = value;
+        }
+    }
+
+    private FluentValidationValidator _formValidator;
+
+    private bool _isValid;
+
+
+    private string _nextLink;
+    private int _timeHorizon;
+
+    // ======== ADJUSTMENT AREA =========
+    private Modal _adjustmentDialogue;
+    private bool _isTimeAdjustmentOpened;
+    // ----------------------------------
+
+    private Guid _prevProfileId = Guid.Empty;
+    protected override void OnParametersSet()
+    {
+        if (_prevProfileId != ProfileId && _profile != null)
+        {
+            _profile.TimeHorizon.TimeHorizonChanged -= OnProfileTimeHorizonChanged;
+        }
+
+        _profile = KycDocument.GetProfileById(ProfileId);
+        _prevProfileId = ProfileId;
+
+        if (_profile == null) return;
+
+        _profile.TimeHorizon.TimeHorizonChanged += OnProfileTimeHorizonChanged;
+        _timeHorizon = ProfilePoints.RoundTimeHorizon(_profile.TimeHorizon.WithdrawTime);
+
+        ExpectationsValidator validator = new ExpectationsValidator();
+        _isValid = validator.Validate(_profile).IsValid;
+
+        int suffixPosition = NavigationManager.Uri.IndexOf("expectations", StringComparison.Ordinal);
+        if (suffixPosition > 0)
+        {
+            // resharper suggestion from .Substring(0, suffixPosition)
+            _nextLink = NavigationManager.Uri[..suffixPosition] + "results";
+        }
+    }
+
+    private void OnProfileTimeHorizonChanged()
+    {
+        _timeHorizon = ProfilePoints.RoundTimeHorizon(_profile.TimeHorizon.WithdrawTime);
+        StateHasChanged();
+    }
+
+    private async Task NavigateNext()
+    {
+        if (!_isValid) return;
+
+        await QLayout.SaveManagedMeeting();
+        NavigationManager.NavigateTo(_nextLink);
+    }
+
+    // ======== ADJUSTMENT AREA =========
+    private void OnAdjustmentCancelHandler()
+    {
+        _timeHorizon = ProfilePoints.RoundTimeHorizon(_profile.TimeHorizon.WithdrawTime);
+    }
+
+    private void OnAdjustmentSelectionHandler()
+    {
+        _profile.TimeHorizon.Range = _selectedTimeHorizonRange;
+        _profile.TimeHorizon.ResetThirdWithdrawTime();
+
+        OnProfileTimeHorizonChanged();
+    }
+    // ----------------------------------
+
+    public void Dispose()
+    {
+        if (_profile != null)
+        {
+            _profile.TimeHorizon.TimeHorizonChanged -= OnProfileTimeHorizonChanged;
+        }
+    }
+}

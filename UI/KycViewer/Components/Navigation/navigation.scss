@@ -1,0 +1,41 @@
+//@import "../variables";
+@import "mixins";
+
+nav.viewer-navigation {
+  display: flex;
+  height: 95vh;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .options {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    margin: 1em;
+
+    img {
+      width: 3em;
+    }
+
+    span {
+      font-size: 1.3em;
+      text-shadow: 2px 2px 8px #baaeae;
+    }
+  }
+
+  .sidebar-menu { // top level ul
+    @include subMenu(1.071em);
+
+    .active {
+      background-color: #c5c5c5;
+    }
+
+    .joint-submenu {
+
+      @include subMenu(2.5em);
+    }
+
+    @include disabled();
+  }
+}

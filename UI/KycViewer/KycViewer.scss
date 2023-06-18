@@ -1,0 +1,192 @@
+//@import "../../Components/Shared/Radio";
+@import "~bootstrap/scss/_functions";
+//@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+
+@import "~atauitoolkit/variables";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/input-group";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/button-group";
+@import "~bootstrap/scss/dropdown";
+@import "~bootstrap/scss/badge";
+$enable-rounded: true;
+@import "~bootstrap/scss/popover";
+$enable-rounded: false;
+
+@import "~atauitoolkit/RadioGroup";
+@import "~atauitoolkit/Numeric";
+@import "~atauitoolkit/ImageSelector";
+@import "~atauitoolkit/styleUtils/effects";
+@import "~atauitoolkit/styleUtils/mixins";
+
+.btn-warning:focus,
+.btn-warning:active,
+.btn-warning:not([disabled]):not(.disabled):active:focus, .btn-warning:not([disabled]):not(.disabled).active:focus, .show > .btn-warning.dropdown-toggle:focus{
+  box-shadow: none;
+  outline: none;
+}
+
+main#questionnaireLayout {
+  background-color: #f6f6f6;
+  grid-column: 2;
+}
+
+input[type="text"] {
+  @extend .form-control;
+  width: initial;
+  &:focus {
+    box-shadow: none;
+  }
+}
+
+input[type="number"] {
+  text-align: right;
+}
+
+label.disabled {
+  color: $gray-400;
+}
+input:disabled {
+  border-color: $gray-200;
+}
+
+input[type="checkbox"], input[type="checkbox"]:checked {
+  margin-left: 0;
+  opacity: 0;
+
+  + span {
+    margin-left: -1em;
+    padding-right: 1.4em;
+
+    &:after {
+      font-size: 1.2em;
+      margin-left: 0.3em;
+    }
+  }
+}
+input[type="checkbox"] + span::before {
+  @extend .checkboxUnchecked;
+}
+
+input[type="checkbox"]:checked + span::before{
+  @extend .checkboxChecked;
+}
+
+// KYC VIEWER NAVIGATION BEGIN
+
+@import "Components/Navigation/navigation";
+@import "Components/Navigation/clientNode";
+@import "Components/Navigation/ProfileNode";
+
+// KYC VIEWER NAVIGATION END
+
+@import "Pages/Meeting";
+@import "Pages/FinancialState";
+@import "Components/NewProfile";
+@import "Components/ProfileNameEditor";
+@import "Pages/Expectations";
+@import "Pages/Results";
+
+@import "Shared/layout.scss";
+@import "Shared/modal.scss";
+@import "Shared/animation.scss";
+@import "Shared/list.scss";
+
+label {
+  font-weight: normal;
+}
+
+
+div .input {
+  height: 30px;
+}
+
+hr {
+  border-top: none;
+  border-bottom: 1px solid #dddddd;
+  margin: 0; // overrides scaffolding
+}
+
+.popover-header {
+  margin-top: 0;
+  font-size: 1em;
+  padding: 0.5rem 0.75rem 0;
+
+  svg {
+    width: 1em;
+    cursor: pointer;
+    float: right;
+
+    path {
+      fill: $gray-600;
+    }
+  }
+}
+
+.popover-body {
+  p:first-child {
+    margin-top: 0;
+  }
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// workaround ::slotted limitation
+// but at same time this does feel more like a "theme" that should be application wide
+ata-percentage-breakdown svg[slot="icons"] path,
+ata-modal svg[slot="icons"] path,
+ata-panel svg[slot="icons"] path {
+  fill: #ffffff;
+}
+
+ata-panel, ata-percentage-breakdown {
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,.2);
+}
+
+textarea[name="kyc_notes"] + div {
+  .ck-editor__editable_inline {
+    height: 10em;
+  }
+}
+
+// ========= ADVISOR VIEW TOOLTIPS ============
+.answersMFDA {
+  font-weight: bold;
+}
+
+.pointsTowards {
+  font-weight: bold;
+}
+
+.pointsTowardsIcon {
+  color: blue;
+}
+
+
+
+// ====== TODO: CSS CONFLICT OVERRIDE ======
+
+// ----- meeting area calendar icon misaligned
+.meetingDateTime svg {
+  margin: 0 !important;
+}
+
+// -------- Profile Rename ---------
+.profileRenameForm {
+
+  display: flex;
+
+  input[name="profileName"] {
+    padding: 0.275em 0;
+  }
+}
+
+.btn-warning {
+  color: white;
+}
+
+.input-group-append .btn {
+  z-index: 0;
+}

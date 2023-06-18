@@ -1,0 +1,88 @@
+﻿@page "/schedule"
+@using MediatR
+@using SharedKernel
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Schedule.Cmd
+
+@inject IMediator MediatR;
+@inject IApplicationState ApplicationState;
+
+<section id="sub-nav-schedule" class="sub-nav">
+    <AdvisorSelection Advisor="@ApplicationState.UserGuid" AdvisorChanged="@_onAdvisorSelectionChanged" @ref="@_advisorSelection"/>
+    <input type="date" value="@_selectedDate.ToString("yyyy-MM-dd")" @onchange="@_onScheduleQueryChanged" format-value="yyyy-MM-dd" @ref="@_dateSelection"/>
+</section>
+
+<main id="schedule">
+    @if (_meetingSchedules.Any())
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Time</th>
+                <th>Meeting with</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (MeetingScheduleDTO schedule in _meetingSchedules)
+            {
+                <tr>
+                    <td>@schedule.DateTime.ToString("t")</td>
+                    <td>@schedule.MeetingWith</td>
+                    <td>
+                        @if (!schedule.IsCompleted)
+                        {
+                            <a href="@($"/meeting/{schedule.MeetingGuid}?viewMode={CLIENT_MODE}")" class="btn btn-success">Begin Meeting</a>
+                        }
+                        else
+                        {
+                            <span class="badge badge-pill badge-info">Complete</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</main>
+
+@code {
+
+    public const string ADVISOR_MODE = "advisor";
+    public const string CLIENT_MODE = "client";
+
+    private IEnumerable<MeetingScheduleDTO> _meetingSchedules = new List<MeetingScheduleDTO>();
+
+    private ElementReference _dateSelection;
+    private AdvisorSelection _advisorSelection;
+
+    private Guid _selectedAdvisor;
+    private DateTimeOffset _selectedDate;
+
+    private async Task _onScheduleQueryChanged(ChangeEventArgs args)
+    {
+        _selectedDate = DateTimeOffset.Parse(args?.Value?.ToString()!);
+
+        await _querySchedules();
+    }
+    private async Task _onAdvisorSelectionChanged(Guid advisorId)
+    {
+        _selectedAdvisor = advisorId;
+
+        await _querySchedules();
+    }
+
+    private async Task _querySchedules()
+    {
+        _meetingSchedules = await MediatR.Send(new SchedulesQuery(_selectedAdvisor, _selectedDate));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _selectedAdvisor = ApplicationState.UserGuid;
+        _selectedDate = DateTimeOffset.Now;
+
+        await _querySchedules();
+    }
+
+}

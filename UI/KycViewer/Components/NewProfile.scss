@@ -1,0 +1,35 @@
+form[name="newProfile"] {
+  color: #343a40;
+  display: grid;
+  grid-template-columns: 4.4em 3.9em 4.2em 3em 3.2em 4.4em 5.7em 4.3em;
+  grid-template-rows: 4em 2em 3em 2em 1fr;
+  grid-auto-flow: row;
+  grid-row-gap: 0.7em;
+  grid-column-gap: .5em;
+
+  label[for="profileName"] {
+    grid-column: 2 / span 7;
+  }
+
+  .yearSelection {
+    grid-column: 1 / span 8;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  button {
+    grid-column: 8;
+  }
+
+  #profileName {
+    padding-right: 0;
+    padding-left: 0;
+
+  }
+
+  br {
+    content: ' ';
+    display: block;
+    margin: 0.2em;
+  }
+}

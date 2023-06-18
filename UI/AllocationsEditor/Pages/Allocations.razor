@@ -1,0 +1,532 @@
+﻿@page "/allocations"
+@page "/allocations/{Version:int}"
+
+@using SharedKernel
+@using Ata.Investment.Allocation.Domain
+@using Ata.Investment.Allocation.Domain.Composition
+@using Microsoft.JSInterop
+@using MediatR
+@using System.Text.Json
+@using AllocationsEditor.Components
+@using Ata.Investment.Allocation.Cmd
+@using Ata.Investment.Allocation.Cmd.Draft
+@using Ata.Investment.Allocation.Cmd.Listing
+
+@inherits OwningComponentBase
+@implements IDisposable
+
+@inject IJSRuntime JSRuntime;
+@inject NavigationManager NavigationManager
+@inject IMediator MediatR
+
+@if (!_isEditorLoaded)
+{
+    <section class="modal show-modal" style="">
+        <div class="modal-content loading"><img src="@(CommonPaths.LoadingGif)" alt="loading"/></div>
+    </section>
+}
+
+<section id="sub-nav-allocationsPage" class="sub-nav">
+
+    <span>@(_isPublished ? "Published - " + (_isListed ? "Listed" : "Unlisted") : "Draft")</span>
+
+    <span class="separator"></span>
+
+    @if (_allocations != null)
+    {
+        @if (!_isPublished)
+        {
+            <button class="btn btn-primary" @onclick="@OnSaveDraftHandler"><i class="fas fa-save"></i> Save Draft</button>
+        }
+        <button class="btn btn-primary" @onclick="@OnCloneHandler"><i class="fas fa-clone"></i> Clone</button>
+
+        @if (!_isPublished)
+        {
+            <button class="btn btn-success" disabled="@(!_isValid)" @onclick="@(() => _confirmPublishModal.Open())"> Publish</button>
+        }
+
+        @if (_isPublished)
+        {
+            @if (!_isListed)
+            {
+                <button class="btn btn-primary" @onclick="@OnListHandler" style="width: 84px;"><i class="fas fa-eye"></i> Enlist</button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="@OnUnlistHandler"><i class="fas fa-eye-slash"></i> Unlist</button>
+            }
+        }
+    }
+</section>
+
+<main id="allocationsEditor">
+@if (_allocations != null)
+{
+    <EditForm Model="@_allocations">
+        <AllocationsValidator OnValidationStateChanged="@((isValid) => _isValid = isValid)" />
+
+        <VersionsList Versions="@_versionDTOs" SelectedVersion="@Version" />
+
+        <div id="controls">
+            <label>Version: <InputNumber @bind-Value="@Version" id="versionNumber" readonly="@_isPublished"/></label>
+            <label>Description: <textarea @bind="@_description" id="versionDescription" readonly="@_isPublished"></textarea></label>
+
+        </div>
+        @* Version <strong>@Model.Version</strong> *@
+
+        <table id="allocationDetails">
+            <thead>
+            <tr>
+                <th>Allocations</th>
+
+                @foreach (AllocationOptionDTO option in _options)
+                {
+                    bool lastColumn = _options.Last() == option;
+                    bool onlyColumn = _options.Count == 1;
+                    <th class="optionHeading @(lastColumn && !onlyColumn ? "last" : "") @(onlyColumn ? "only" : "") @(!_isPublished ? "draft" : "")">
+                        @if (!onlyColumn && !_isPublished)
+                        {
+                            <img src="/_content/AllocationsEditor/img/delete.png" @onclick="@(() => RemoveOption(option))" class="deleteOption" alt="Delete Option"/>
+                        }
+                        <InputText @bind-Value="@option.Name" @oninput="@(e => SyncOptionNames(((ChangeEventArgs) e).Value.ToString(), option))" readonly="@_isPublished"/>
+
+                        @if (_options.Last() == option && !_isPublished)
+                        {
+                            <img src="/_content/AllocationsEditor/img/add.png" @onclick="@AddOption" class="addOption" alt="Add Option"/>
+                        }
+                    </th>
+                }
+
+            </tr>
+            </thead>
+            <tbody>
+
+            @foreach (AllocationDTO allocation in _allocations)
+            {
+                bool isFirstRow = _allocations.First() == allocation;
+                <tr>
+                    <td>
+                        <div class="allocation">
+                            <span>@allocation.Name</span>
+                        </div>
+                    </td>
+                    @foreach (AllocationOptionDTO option in allocation.Options)
+                    {
+                        bool isOnlyComponent = option.CompositionParts.Count == 1;
+                        bool isValid = IsAllocationOptionValid(option);
+                        string cellCoordinate = $"ar_{allocation.RiskLevel}_on_{option.OptionNumber}";
+
+                        <td class="allocationOption @(isValid ? "" : "invalid")" data-coordinate="@cellCoordinate" data-risk="@allocation.RiskLevel" data-option="@option.OptionNumber"><div>
+                            @foreach ((CompositionPart compositionPart, int index) in option.CompositionParts.WithIndex())
+                            {
+                                <InputText class="fundCode" @bind-Value="@compositionPart.FundCode" @oninput="@((e) => SyncFundCodes(((ChangeEventArgs) e).Value.ToString(), option, index))" readonly="@(!isOnlyComponent && !isFirstRow || _isPublished)"/>
+                                <InputNumber class="fundPercentage" @bind-Value="@compositionPart.Percent" readonly="@(_isPublished)"/>
+
+                                @if (isFirstRow && !_isPublished)
+                                {
+                                    if (isOnlyComponent)
+                                    {
+                                        <img src="/_content/AllocationsEditor/img/add.png" @onclick="@(() => AddCompositionToOption(option))" class="compositionBtn addComposition" alt="Add Composition"/>
+                                    }
+                                    else
+                                    {
+                                        <img src="/_content/AllocationsEditor/img/delete.png" @onclick="@(() => RemoveCompositionFromOption(option, index))" class="compositionBtn deleteComposition" alt="Delete Composition"/>
+                                    }
+
+                                }
+                                else
+                                {
+                                    <div>&nbsp;</div>
+                                }
+                            }
+
+                            @if (isFirstRow && !_isPublished && !isOnlyComponent)
+                            {
+                                <div>&nbsp;</div><div>&nbsp;</div>
+                                <img src="/_content/AllocationsEditor/img/add.png" @onclick="@(() => AddCompositionToOption(option))" class="compositionBtn addComposition" alt="Add Composition"/>
+                            }
+                        </div></td>
+                    }
+                </tr>
+            }
+            </tbody>
+        </table>
+
+        <div class="notesArea">
+            <textarea is="ata-rich-editor" name="allocations_notes" class="notes" title="Allocations notes"></textarea>
+        </div>
+    </EditForm>
+
+    <Modal Title="Draft operation" ModalType="@ModalType.SuccessOK" @ref="@_resultModal">
+        @_resultMessage
+    </Modal>
+
+    <Modal Title="Confirm publish allocation" ModalType="@ModalType.YesNo" YesHandler="@Publish" @ref="@_confirmPublishModal">
+        Confirm publish allocation options? Once published, can no longer edit.
+    </Modal>
+}
+else
+{
+    <div>404 - specified allocation version does not exist</div>
+}
+</main>
+@code{
+
+    private Modal _resultModal;
+
+    private Modal _confirmPublishModal;
+
+    private VersionsList _versionsList;
+
+    private string _resultMessage;
+
+    [Parameter]
+    public int Version { get; set; }
+
+    private string _description;
+
+    private bool _isPublished;
+
+    private bool _isListed;
+
+    private IEnumerable<VersionDTO> _versionDTOs = new List<VersionDTO>();
+
+    private VersionDraft _versionDraft = null;
+
+    private List<AllocationOptionDTO> _options = new List<AllocationOptionDTO>();
+
+    private IEnumerable<AllocationDTO> _allocations = new List<AllocationDTO>();
+
+    private bool _isValid;
+
+    private int _lastVersion = 0;
+
+    private bool _isEditorLoaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchAllAvailableVersions();
+
+        _isEditorLoaded = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_versionDraft != null)
+        {
+            await JSRuntime.InvokeVoidAsync("uiUtils.setRichTextValue", "allocations_notes", _versionDraft.Notes ?? "");
+            await JSRuntime.InvokeVoidAsync("uiUtils.toggleReadOnlyRichTextValue", "allocations_notes", _isPublished);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isEditorLoaded = false;
+
+        if (_lastVersion != 0 && _lastVersion != Version)
+        {
+            await SaveDraft();
+        }
+        _lastVersion = Version;
+
+        if (Version == 0)
+        {
+            _versionDraft = await MediatR.Send(new LatestDraftQuery());
+            Version = _versionDraft.Version;
+        }
+        else
+        {
+            _versionDraft = await MediatR.Send(new DraftAtVersionQuery(Version));
+        }
+
+        if (_versionDraft == null)
+        {
+
+            _isEditorLoaded = true;
+            return;
+        }
+
+        _description = _versionDraft.Description;
+
+        _allocations = (JsonSerializer.Deserialize<List<AllocationDTO>>(_versionDraft.Draft))
+            .OrderBy(a => a.RiskLevel);
+
+        IEnumerable<AllocationDTO> allocationDTOs = _allocations.ToList();
+        _options = (
+            from options in allocationDTOs.First().Options
+            select options
+        ).ToList();
+
+        _isValid = AllocationsValidator.Validate(allocationDTOs);
+
+        PopulateStatusUi();
+
+        _isEditorLoaded = true;
+    }
+
+    private void PopulateStatusUi()
+    {
+        VersionDTO versionDTO;
+
+        if (Version == 0)
+        {
+            versionDTO = (
+                from v in _versionDTOs
+                orderby v.Version descending
+                select v
+            ).First();
+        }
+        else
+        {
+            versionDTO = (
+                from v in _versionDTOs
+                where v.Version == Version
+                select v
+            ).Single();
+        }
+
+
+        _isPublished = !versionDTO.IsDraft;
+        _isListed = versionDTO.IsListed;
+    }
+
+    private void RemoveOption(AllocationOptionDTO allocationOption)
+    {
+        int optionIndex = _allocations.First().Options.IndexOf(allocationOption);
+
+        foreach (AllocationDTO allocationDTO in _allocations)
+        {
+            allocationDTO.Options.RemoveAt(optionIndex);
+        }
+
+        _options.RemoveAt(optionIndex);
+
+    // update option number
+        foreach (AllocationDTO allocationDTO in _allocations)
+        {
+            for (int i = 0; i < allocationDTO.Options.Count; i++)
+            {
+                allocationDTO.Options[i].OptionNumber = i;
+            }
+        }
+
+        for (int i = 0; i < _options.Count; i++)
+        {
+            _options[i].OptionNumber = i;
+        }
+
+    // TODO consider changing allocations to observable collection
+        _isValid = AllocationsValidator.Validate(_allocations);
+    }
+
+    private void AddOption()
+    {
+        foreach (AllocationDTO allocationDTO in _allocations)
+        {
+            allocationDTO.Options.Add(new AllocationOptionDTO
+            {
+                Name = "New Option",
+                CompositionParts = new List<CompositionPart>
+                {
+                    new CompositionPart("code", 0)
+                },
+                OptionNumber = allocationDTO.Options.Count
+            });
+        }
+
+        _options.Add(_allocations.First().Options.Last());
+
+
+        _isValid = AllocationsValidator.Validate(_allocations);
+    }
+
+    private void AddCompositionToOption(AllocationOptionDTO option)
+    {
+        int optionIndex = _allocations.First()
+            .Options.IndexOf(option);
+
+        foreach (AllocationDTO allocationDTO in _allocations)
+        {
+            allocationDTO
+                .Options[optionIndex]
+                .CompositionParts
+                .Add(new CompositionPart("code", 0));
+        }
+
+        _isValid = AllocationsValidator.Validate(_allocations);
+    }
+
+    private void RemoveCompositionFromOption(AllocationOptionDTO allocationOptionDTO, int compositionIndex)
+    {
+        int optionIndex = _allocations.First().Options.IndexOf(allocationOptionDTO);
+
+        foreach (AllocationDTO allocationDTO in _allocations)
+        {
+            allocationDTO
+                .Options[optionIndex]
+                .CompositionParts
+                .RemoveAt(compositionIndex);
+        }
+
+        _isValid = AllocationsValidator.Validate(_allocations);
+    }
+
+    private void SyncFundCodes(string fundCode, AllocationOptionDTO allocationOption, int compositionIndex)
+    {
+        if (_allocations.First().Options.First(ao => ao.OptionNumber == allocationOption.OptionNumber).CompositionParts.Count == 1)
+        {
+            return;
+        }
+
+        foreach (AllocationDTO allocationDTO in _allocations)
+        {
+            allocationDTO
+                .Options.First(o => o.OptionNumber == allocationOption.OptionNumber)
+                .CompositionParts[compositionIndex]
+                .FundCode = fundCode;
+        }
+    }
+
+    private void SyncOptionNames(string optionName, AllocationOptionDTO allocationOption)
+    {
+        int optionIndex = _allocations.First().Options.IndexOf(allocationOption);
+        foreach (AllocationDTO allocationDTO in _allocations)
+        {
+            allocationDTO
+                .Options[optionIndex]
+                .Name = optionName;
+        }
+    }
+
+    private async Task FetchAllAvailableVersions()
+    {
+        _versionDTOs = await MediatR.Send(new AllAllocationVersionsQuery());
+
+        PopulateStatusUi();
+    }
+
+    private bool IsAllocationOptionValid(AllocationOptionDTO optionDTO)
+    {
+        return 100 == optionDTO.CompositionParts.Sum(c => c.Percent);
+    }
+
+    private async Task SaveDraft()
+    {
+        _versionDraft.Draft = JsonSerializer.Serialize(_allocations.ToList());
+        _versionDraft.Description = _description;
+        _versionDraft.Notes = await JSRuntime.InvokeAsync<string>("uiUtils.getRichTextValue", "allocations_notes");
+
+    // Would be needed if used .AsNoTracking. But workflow seems different in server blazor.
+    // AllocationRepository.Update(_versionDraft);
+
+    // currently draft fetching is set to tracking.
+        await MediatR.Send(new SaveAllocationCommand(_versionDraft));
+    }
+
+    private async Task OnSaveDraftHandler()
+    {
+        await SaveDraft();
+
+        _resultMessage = "Draft saved";
+        _resultModal.Open();
+    }
+
+    private async Task Publish()
+    {
+        _isEditorLoaded = false;
+
+        await SaveDraft();
+
+        bool didPublish = (await MediatR.Send(new PublishDraftCommand(_versionDraft.Version))).Success;
+
+        if (didPublish)
+        {
+            _resultMessage = "Draft published.";
+            _resultModal.Open();
+
+            VersionDTO versionDto = (
+                from v in _versionDTOs
+                where v.Version == Version
+                select v
+            ).Single();
+            versionDto.IsPublished = true;
+
+            PopulateStatusUi();
+        }
+        else
+        {
+            _resultModal.ModalType = ModalType.ErrorOK;
+            // TODO display error message here.
+            _resultMessage = "Problem publishing draft...";
+        }
+
+        _isEditorLoaded = true;
+    }
+
+    private async Task OnCloneHandler()
+    {
+        _isEditorLoaded = false;
+        await SaveDraft();
+
+        VersionDraft nextVersionDraft = (await MediatR.Send(new CloneAllocationCommand(Version))).Data;
+
+        await FetchAllAvailableVersions();
+
+        NavigationManager.NavigateTo($"/allocations/{nextVersionDraft.Version}");
+    }
+
+    private async Task OnUnlistHandler()
+    {
+        _isEditorLoaded = false;
+
+        await SaveDraft();
+        bool unlisted = (await MediatR.Send(new UnlistAllocationCommand(Version))).Success;
+
+        if (!unlisted)
+        {
+            // TODO error handling
+
+            return;
+        }
+
+        (
+            from v in _versionDTOs
+            where v.Version == Version
+            select v
+        ).Single().IsListed = false;
+
+        PopulateStatusUi();
+
+        _isEditorLoaded = true;
+    }
+
+    private async Task OnListHandler()
+    {
+        _isEditorLoaded = false;
+
+        await SaveDraft();
+        bool listed = (await MediatR.Send(new EnlistAllocationCommand(Version))).Success;
+
+        if (!listed)
+        {
+            // TODO error handling
+
+            return;
+        }
+
+        (
+            from v in _versionDTOs
+            where v.Version == Version
+            select v
+        ).Single().IsListed = true;
+
+        PopulateStatusUi();
+
+        _isEditorLoaded = true;
+    }
+
+    public async void Dispose()
+    {
+        await SaveDraft();
+    }
+}

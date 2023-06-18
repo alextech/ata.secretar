@@ -1,0 +1,41 @@
+#profileExpectationsView {
+  min-height: 24em;
+
+  #profileInfo {
+    margin-bottom: 1em;
+    width: 65em;
+  }
+
+  #expectations section {
+
+    input {
+      margin-left: 1em;
+      margin-right: 0.5em;
+    }
+
+    input[name="currentInvestment"] {
+      float: left;
+      margin-bottom: 4em;
+    }
+
+    ata-loss-vs-gain-profiles,
+    ata-hypothetical-profiles {
+      margin-top: 1em;
+    }
+  }
+
+  #expectations section span > span, .question span {
+    &:after {
+      content: "\A";
+      white-space: pre;
+    }
+
+    font-style: italic;
+  }
+
+  .next {
+    float: right;
+    margin-top: 1em;
+    text-decoration: none;
+  }
+}

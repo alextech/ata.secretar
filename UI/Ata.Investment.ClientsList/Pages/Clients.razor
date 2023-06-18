@@ -1,0 +1,529 @@
+﻿@page "/"
+@page "/clients"
+@page "/clients/{ClientID:guid}"
+@page "/clients/{ClientID:guid}/profiles"
+@page "/clients/{ClientID:guid}/profiles/{Year:int}"
+@attribute [Authorize]
+
+@using System.Globalization
+@using AutoMapper
+@using MediatR
+@using Microsoft.AspNetCore.Authorization
+@using ViewModels
+@using Ata.Investment.Profile.Cmd
+@using Ata.Investment.Profile.Cmd.Households
+@using Ata.Investment.Profile.Domain.Household
+
+@inherits Microsoft.AspNetCore.Components.OwningComponentBase
+
+@inject IMediator MediatR;
+@inject NavigationManager NavigationManager
+
+<section class="sub-nav">
+    @{
+        bool loaded = _isHouseholdLoaded;
+    }
+
+    <button value="New Client" disabled="@(!loaded)" class="btn btn-primary" @onclick="@BeginCreatingHousehold"><i class="fas fa-user-plus"></i> New Household</button>
+    <button value="Archive Selected" disabled="@(_household is not { IsActive: true })" class="btn btn-danger" @onclick="@BeginArchiveHousehold"><i class="fas fa-archive"></i> Archive Selected</button>
+    <Feature Name="Scheduler">
+        <button value="Scheduler" disabled="@(_household is not {IsActive: true})" class="btn btn-primary" @onclick="@BeginScheduleClient"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
+    </Feature>
+    @if (_household is { IsActive: false })
+    {
+        <button value="Restore Selected" class="btn btn-primary" @onclick="@BeginRestoreHousehold"><i class="fas fa-undo"></i> Restore Selected</button>
+        <button value="Remove Permanently" class="btn btn-danger" @onclick="@BeginRemoveHousehold"><i class="fas fa-trash-alt"></i> Remove Permanently</button>
+    }
+
+    <div class="input-group-sm">
+        <input type="text" disabled="@(!loaded)" @oninput="HandleUserSearch" class="form-control" placeholder="Search (3+ characters)"/>
+        <div class="input-group-append">
+            <span class="input-group">
+                <button value="search" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
+            </span>
+        </div>
+    </div>
+</section>
+
+<main id="clientsList">
+
+@if (!_isHouseholdLoaded)
+{
+    <section class="modal show-modal" style="display: flex; align-items: center;">
+        <div class="modal-content loading"><img src="@(CommonPaths.LoadingGif)" alt="loading"/></div>
+    </section>
+}
+
+<section id="clientsListTable">
+    <table class="@(!_clientsLoaded ? "isLoading" : "")">
+        <thead>
+        <tr>
+            <th>Primay Client Name</th>
+            <th>Email</th>
+            <th>Joint Client Name</th>
+            <th class="lastEmailColumn">Email</th>
+            <th>Status <i class="fas fa-filter" @onclick="@(() => _isStatusFilterOpened = !_isStatusFilterOpened)"></i>
+                <div class="dropdown-menu @(_isStatusFilterOpened ? "show" : "")">
+                    <ul>
+                        <li><label><input type="checkbox" checked="@_filterIsActive" @onchange="@(() => _filterIsActive = !_filterIsActive)" /> Active</label></li>
+                        <li><label><input type="checkbox" checked="@_filterIsArchived" @onchange="@(() => _filterIsArchived = !_filterIsArchived)" /> Archived</label></li>
+                    </ul>
+                    <button class="btn btn-success" @onclick="@ApplyStatusFilter">OK</button>
+                </div>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (Household household in _householdsList)
+        {
+            Client primaryClient = household.PrimaryClient;
+            Client jointClient = household.JointClient;
+
+            string householdUrl = $"/clients/{primaryClient.Guid}?{UrlSuffix}";
+
+            <tr class='@(primaryClient.Guid == ClientID ? "selected" : "")'>
+                <td class="client-name-column"><a href="@householdUrl">@primaryClient.Name</a></td>
+                <td><a href="@householdUrl">@primaryClient.Email</a></td>
+
+                <td class="client-name-column"><a href="@householdUrl">@jointClient?.Name &nbsp;</a></td>
+                <td class="lastEmailColumn"><a href="@householdUrl">@jointClient?.Email &nbsp;</a></td>
+                <td>
+                    @if (household.IsActive)
+                    {
+                        <span><i class="fas fa-check-circle is-active"></i> Active</span>
+                    }
+                    else
+                    {
+                        <span><i class="fas fa-archive is-archived"></i> Archived</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+    </table>
+    @* @if (!_clientsLoaded) *@
+    @* { *@
+    @*     <img src="@(CommonPaths.LoadingGif)" style="margin-left: 41%; margin-top: 9%" alt="loading"/> *@
+    @* } *@
+</section>
+
+@if (_household != null)
+{
+    <section id="clientInfo">
+        <section class="clientInfoDetails" style="grid-area: primaryClient;">
+            <div>
+                <h3 class="householdMemberName">@_selectedPrimaryClient.Name</h3>
+                <i class="fas fa-pencil-alt" @onclick="@(() => BeginEditClientDialogue(_selectedPrimaryClient))"></i>
+                @if (_household.IsJoint)
+                {
+                    <i class="fas fa-user-minus" @onclick="@(() => BeginRemoveFromHousehold(_selectedPrimaryClient.Guid))"></i>
+                }
+                <br/>
+            </div>
+            <div>Email: <span>@_selectedPrimaryClient.Email</span></div>
+            <div>Date of Birth: <span>@_selectedPrimaryClient.DateOfBirth.ToString("MMMM dd, yyyy", new CultureInfo("en-US"))</span></div>
+        </section>
+
+        <hr/>
+
+        <section id="jointClientInfo" class="clientInfoDetails" style="grid-area: jointClient;">
+            @if (_selectedJointClient.Guid == Guid.Empty)
+            {
+                <div>
+                    <button class="btn btn-secondary btn-sm" value="Edit Selected" @onclick="@BeginAddToHousehold"><i class="fas fa-user-plus"></i> Add to household</button>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <h3 class="householdMemberName">@_selectedJointClient.Name</h3>
+                    <i class="fas fa-pencil-alt" @onclick="@(() => BeginEditClientDialogue(_selectedJointClient))"></i>
+                    <i class="fas fa-user-minus" @onclick="@(() => BeginRemoveFromHousehold(_selectedJointClient.Guid))"></i>
+                    <br/>
+                </div>
+                <div>Email: <span>@_selectedJointClient.Email</span></div>
+                <div>Date of Birth: <span>@_selectedJointClient.DateOfBirth.ToString("MMMM dd, yyyy", new CultureInfo("en-US"))</span></div>
+            }
+
+        </section>
+    </section>
+
+    <MeetingsArea Household="@_household" BaseUrl="@_baseUrl" Year="@Year" />
+}
+</main>
+
+<ClientEditorModal OnValidSubmit="@((Client c) => _clientValidSubmitHandler(c))" @ref="@_clientDialogue" />
+<ScheduleMeetingModal @ref="@_newScheduleDialogue" HouseholdId="@_household?.Guid"/>
+<Modal Title="Confirm removal" ModalType="@ModalType.YesNo" YesHandler="@RemoveClientFromHousehold" @ref="@_clientRemoveDialogue">
+    Confirm removing @_clientNameToRemove from household?
+</Modal>
+<Modal Title="Confirm archive" ModalType="@ModalType.YesNo" YesHandler="@ArchiveHousehold" @ref="_householdArchiveDialogue">
+    Confirm archiving household with @_householdNameToArchive ?
+</Modal>
+<Modal Title="Confirm restore" ModalType="ModalType.YesNo" YesHandler="@RestoreHousehold" @ref="_householdRestoreDialogue">
+    Confirm restoring household with @_householdNameToArchive ?
+</Modal>
+<Modal Title="Confirm remove" ModalType="@ModalType.YesNo" YesHandler="@RemoveHousehold" @ref="_householdRemoveDialogue">
+    Confirm permanently remove household with @_householdNameToArchive ?
+</Modal>
+
+@code {
+    private ClientEditorModal _clientDialogue;
+
+    // ===== DIALOGUES ======
+    //
+    private Modal _clientRemoveDialogue;
+
+    private Modal _householdArchiveDialogue;
+
+    private Modal _householdRemoveDialogue;
+
+    private Modal _householdRestoreDialogue;
+
+    private ScheduleMeetingModal _newScheduleDialogue;
+    //
+    // ----------------------
+    
+    private IEnumerable<Household> _householdsList = new List<Household>();
+
+    #nullable enable
+    private Household? _household;
+    #nullable restore
+
+    private ClientVM _selectedPrimaryClient = new ClientVM();
+    
+    private ClientVM _selectedJointClient = new ClientVM();
+
+    private delegate Task ClientSubmitHandler(Client client);
+
+    private ClientSubmitHandler _clientValidSubmitHandler;
+
+    private string _baseUrl;
+
+    private bool _clientsLoaded;
+
+    private bool _isHouseholdLoaded;
+
+    private bool _isStatusFilterOpened;
+
+    private string _currentSearchString;
+
+    private bool _filterIsActive = true;
+
+    private bool _filterIsArchived;
+
+    private string UrlSuffix =>
+                "isActive=" + (_filterIsActive ? "true" : "false") + "&" +
+                "isArchived=" + (_filterIsArchived ? "true" : "false");
+
+    [Parameter]
+    public DateTime AsOf { get; set; }
+
+    [Parameter]
+    public int Year { get; set; }
+    
+    [Parameter]
+    public Guid ClientID { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavigationManager.LocationChanged += HandleViewModeChanged;
+        ParseClientsFilter();
+
+        _householdsList = await MediatR.Send(new HouseholdsQuery()
+        {
+            IsActive = _filterIsActive,
+            IsArchived = _filterIsArchived
+        });
+        _clientsLoaded = true;
+        _isHouseholdLoaded = true;
+    }
+
+    private void HandleViewModeChanged(object sender, LocationChangedEventArgs e)
+    {
+        ParseClientsFilter();
+        SyncUI();
+    }
+
+    private void ParseClientsFilter()
+    {
+        NavigationManager.TryGetQueryString("isActive", out string filterString);
+        bool.TryParse(filterString, out _filterIsActive);
+        NavigationManager.TryGetQueryString("isArchived", out filterString);
+        bool.TryParse(filterString, out _filterIsArchived);
+
+        if (_filterIsActive == false && _filterIsArchived == false)
+        {
+            _filterIsActive = true;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ClientID != Guid.Empty)
+        {
+            _isHouseholdLoaded = false;
+            await FetchRequestedClientHousehold();
+            _isHouseholdLoaded = true;
+        }
+        else
+        {
+            _household = null;
+        }
+
+        _baseUrl = "/clients/" + ClientID;
+    }
+
+    private async Task HandleUserSearch(ChangeEventArgs e)
+    {
+        string value = _currentSearchString = e.Value.ToString();
+
+        if (string.IsNullOrEmpty(value))
+        {
+            _clientsLoaded = false;
+            _householdsList = await MediatR.Send(new HouseholdsQuery()
+            {
+                IsActive = _filterIsActive,
+                IsArchived = _filterIsArchived,
+            });
+            _clientsLoaded = true;
+            return;
+        }
+
+        if (value.Length < 3)
+        {
+            return;
+        }
+
+        _clientsLoaded = false;
+        _householdsList = await MediatR.Send(new HouseholdsQuery() {
+            ClientName = value,
+            IsActive = _filterIsActive,
+            IsArchived = _filterIsArchived,
+        });
+        _clientsLoaded = true;
+    }
+
+    // ===== Delegate Event Handlers ===============
+    private void BeginCreatingHousehold(MouseEventArgs e)
+    {
+        _clientValidSubmitHandler = CreateHouseholdWithClient;
+        _clientDialogue.OpenForClientVm(new ClientVM());
+    }
+    
+    // ReSharper disable once SuggestBaseTypeForParameter
+    private void BeginEditClientDialogue(ClientVM clientVm)
+    {
+        _clientValidSubmitHandler = UpdateClient;
+        _clientDialogue.OpenForClientVm((ClientVM)clientVm.Clone());
+    }
+    
+    private void BeginAddToHousehold(MouseEventArgs e)
+    {
+        _clientValidSubmitHandler = AddClientToHousehold;
+        _clientDialogue.OpenForClientVm(new ClientVM());
+    }
+
+    private string _clientNameToRemove;
+    private void BeginRemoveFromHousehold(Guid clientId)
+    {
+        _clientNameToRemove = _selectedPrimaryClient.Guid == clientId ? _selectedPrimaryClient.Name : _selectedJointClient.Name;
+
+        _clientRemoveDialogue.Open();
+        _clientIdToRemove = clientId;
+    }
+
+    // same as delete
+    private string _householdNameToArchive;
+    private void BeginArchiveHousehold(MouseEventArgs e)
+    {
+        _householdNameToArchive = _selectedPrimaryClient.Name;
+
+        if (_household.IsJoint)
+        {
+            _householdNameToArchive += " and " + _selectedJointClient.Name;
+        }
+
+        _householdArchiveDialogue.Open();
+        _householdIdToArchive = _household.Guid;
+    }
+
+    private void BeginRestoreHousehold(MouseEventArgs e)
+    {
+        _householdNameToArchive = _selectedPrimaryClient.Name;
+
+        if (_household.IsJoint)
+        {
+            _householdNameToArchive += " and " + _selectedJointClient.Name;
+        }
+
+        _householdRestoreDialogue.Open();
+        _householdIdToRestore = _household.Guid;
+    }
+
+    // household name to delete can share with archive
+    private void BeginRemoveHousehold(MouseEventArgs e)
+    {
+        _householdNameToArchive = _selectedPrimaryClient.Name;
+
+        if (_household.IsJoint)
+        {
+            _householdNameToArchive += " and " + _selectedJointClient.Name;
+        }
+
+        _householdRemoveDialogue.Open();
+        _householdIdToArchive = _household.Guid;
+    }
+
+    private void BeginScheduleClient(MouseEventArgs e)
+    {
+        _newScheduleDialogue.Open();
+    }
+
+    
+    // ======== Perform Actions ===================
+    private async Task CreateHouseholdWithClient(Client client)
+    {
+        _clientsLoaded = false;
+        Household newHousehold = new Household(client);
+        await MediatR.Send(new CreateHouseholdCommand(newHousehold));
+
+        await SyncUI();
+        _clientsLoaded = true;
+        NavigationManager.NavigateTo($"/clients/{client.Guid}");
+    }
+
+    private async Task AddClientToHousehold(Client client)
+    {
+        _clientsLoaded = false;
+        _household.AddMember(client);
+        _selectedJointClient = Mapper.Map<ClientVM>(client);
+
+        await MediatR.Send(new AddToHouseholdCommand(_household.Guid, client));
+
+        _clientsLoaded = true;
+        await SyncUI();
+    }
+
+    private Guid _clientIdToRemove;
+    private async Task RemoveClientFromHousehold()
+    {
+        _clientsLoaded = false;
+        _household.RemoveMember(_clientIdToRemove);
+
+        await MediatR.Send(new RemoveFromHouseholdCommand(_household.Guid, _clientIdToRemove));
+
+        if (_selectedJointClient.Guid == _clientIdToRemove)
+        {
+            _selectedJointClient = new ClientVM();
+        }
+
+        if (_selectedPrimaryClient.Guid == _clientIdToRemove)
+        {
+            _selectedPrimaryClient = _selectedJointClient;
+            _selectedJointClient = new ClientVM();
+        }
+
+        await SyncUI();
+        _clientsLoaded = true;
+    }
+
+    private async Task UpdateClient(Client client)
+    {
+        _clientsLoaded = false;
+        await MediatR.Send(new UpdateClientCommand(client.Guid, client));
+        await FetchRequestedClientHousehold();
+        await SyncUI();
+        _clientsLoaded = true;
+    }
+
+    private async Task SyncUI()
+    {
+        _clientsLoaded = false;
+        _householdsList = await MediatR.Send(new HouseholdsQuery() {
+            ClientName = _currentSearchString,
+            IsActive = _filterIsActive,
+            IsArchived = _filterIsArchived,
+        });
+        _clientsLoaded = true;
+        StateHasChanged();
+    }
+
+    private async Task FetchRequestedClientHousehold()
+    {
+        _household = await MediatR.Send(new HouseholdByClientIdQuery(ClientID));
+        if (_household == null)
+        {
+            NavigationManager.NavigateTo("/clients");
+            return;
+        }
+        
+        _selectedPrimaryClient = Mapper.Map<ClientVM>(_household.PrimaryClient);
+
+        if (_household.IsJoint)
+        {
+            _selectedJointClient = Mapper.Map<ClientVM>(_household.JointClient);
+        }
+        else
+        {
+            _selectedJointClient = new ClientVM();
+        }
+
+        _baseUrl = "/clients/" + ClientID;
+    }
+
+    private Guid _householdIdToArchive;
+    private async Task ArchiveHousehold()
+    {
+        _clientsLoaded = false;
+
+        await MediatR.Send(new ArchiveHouseholdCommand(_householdIdToArchive));
+        _householdIdToArchive = Guid.Empty;
+
+        await SyncUI();
+        NavigationManager.NavigateTo("/clients");
+    }
+
+    private Guid _householdIdToRestore;
+    private async Task RestoreHousehold()
+    {
+        _clientsLoaded = false;
+
+        await MediatR.Send(new RestoreHouseholdCommand(_householdIdToRestore));
+        _householdIdToRestore = Guid.Empty;
+
+        await SyncUI();
+        NavigationManager.NavigateTo("/clients");
+    }
+
+    private async Task RemoveHousehold()
+    {
+        _clientsLoaded = false;
+
+        await MediatR.Send(new RemoveHouseholdCommand(_householdIdToArchive));
+        _householdIdToArchive = Guid.Empty;
+
+        await SyncUI();
+        NavigationManager.NavigateTo("/clients?isActive=false&isArchived=true");
+    }
+
+    private void ApplyStatusFilter()
+    {
+        _isStatusFilterOpened = false;
+        string url = NavigationManager.Uri;
+        int queryIndex = url.IndexOf("?", StringComparison.Ordinal);
+        if (queryIndex > 0)
+        {
+            url = url.Substring(0, queryIndex);
+        }
+
+        url += "?" + UrlSuffix;
+        NavigationManager.NavigateTo(url);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        NavigationManager.LocationChanged -= HandleViewModeChanged;
+    }
+
+}

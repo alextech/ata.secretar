@@ -1,0 +1,361 @@
+﻿@using System.Data
+@using Ata.Investment.Profile.Domain.Points
+@using System.Collections.ObjectModel
+@using System.Diagnostics
+@using KycViewer.Components.RiskCapacityBreakdown
+@using Ata.Investment.Profile.Domain.Profile
+
+@inject NavigationManager NavigationManager
+
+@{
+    EnumerableRowCollection<DataRow> decisionTable = DecisionTable.AsEnumerable();
+    int timeRisk = (
+        from row in decisionTable
+        where row.Field<bool>("TimeHorizon") == true
+        select row.Field<int>("RiskLevel")
+    ).Single();
+
+    int knowledgeRisk = (
+        from row in decisionTable
+        where row.Field<bool>("InvestmentKnowledge") == true
+        select row.Field<int>("RiskLevel")
+    ).Single();
+
+    int objectivesRisk = (
+        from row in decisionTable
+        where row.Field<bool>("InvestmentObjectives") == true
+        select row.Field<int>("RiskLevel")
+    ).Single();
+
+    int capacityRisk = (
+        from row in decisionTable
+        where row.Field<bool>("RiskCapacity") == true
+        select row.Field<int>("RiskLevel")
+    ).Single();
+
+    int attitudeRisk = (
+        from row in decisionTable
+        where row.Field<bool>("RiskAttitude") == true
+        select row.Field<int>("RiskLevel")
+    ).Single();
+
+    int minRisk = new[] {timeRisk, knowledgeRisk, objectivesRisk, capacityRisk, attitudeRisk}.Min();
+
+    // ReSharper disable once RedundantAssignment
+    Dictionary<string, int> breakdown = Breakdown.RiskAttitude;
+    Profile profile = Breakdown.Profile;
+}
+
+<table id="breakdownPanel">
+    @if (!profile.IsJoint)
+    {
+        <thead>
+        <th>Item</th>
+        <th>Points</th>
+        <th>Risk</th>
+        </thead>
+
+        <tbody>
+        <tr>
+            <td>
+                <a href="@MatchRowUrl("timehorizon")">Time Horizon</a></td>
+            <td></td>
+            <td>@timeRisk</td>
+        </tr>
+
+
+        <tr>
+            <td><a href="@MatchRowUrl("knowledge")">Investment Knowledge</a></td>
+            <td></td>
+            <td>@knowledgeRisk</td>
+        </tr>
+
+        <tr>
+            <td><a href="@MatchRowUrl("goal")">Investment Objectives (goals)</a></td>
+            <td></td>
+            <td>@objectivesRisk</td>
+        </tr>
+
+        <!-- ============ RISK CAPACITY =================== -->
+
+        <tr class="groupHeadingRow">
+            <td colspan="3">Risk Capacity:</td>
+        </tr>
+
+
+        @foreach (string[] row in _riskCapacityRows)
+        {
+            <tr>
+                <td class="@row[0]">
+                    @if (row[4] == "age")
+                    {
+                        @row[1]
+                    }
+                    else if (row[4] != "")
+                    {
+                        <a href="@($"{BaseUrl}#{row[4]}")">@row[1]</a>
+                    }
+                    else
+                    {
+                        @row[1]
+                    }
+                </td>
+                <td>@row[2]</td>
+                <td>@row[3]</td>
+            </tr>
+        }
+
+        <tr>
+            <td class="subtotalLabel">SubTotal:</td>
+            <td class="subtotalNumber">@_capacityTotal</td>
+            <td>@attitudeRisk</td>
+        </tr>
+
+        <!-- ========== RISK ATTITUDE ========== -->
+        <tr class="groupHeadingRow">
+            <td colspan="3">Risk Attitude:</td>
+        </tr>
+
+        @{
+            breakdown = Breakdown.RiskAttitude;
+        }
+        @foreach (KeyValuePair<string, int> answer in breakdown)
+        {
+            <tr>
+                <td class="groupSubItem">
+                    <a href="@MatchRowUrl(answer.Key)">
+                        @LabelKeys.GetValueOrDefault(answer.Key)
+                    </a></td>
+                <td>@answer.Value </td>
+                <td></td>
+            </tr>
+        }
+        <tr>
+            <td class="subtotalLabel">SubTotal:</td>
+            <td class="subtotalNumber">@breakdown.Sum(a => a.Value)</td>
+            <td>@attitudeRisk</td>
+        </tr>
+
+        <tr>
+            <td></td>
+            <td class="subtotalLabel">MIN()</td>
+            <td class="subtotalNumber">@minRisk</td>
+        </tr>
+        </tbody>
+    }
+    else // JOINT PROFILE table
+    {
+        {
+            Debug.Assert(profile.JointClient != null, "profile.JointClient != null");
+        }
+        <thead>
+            <th>Item</th>
+            <th>Points</th>
+            <th>JointPoints</th>
+            <th>Risk</th>
+        </thead>
+
+        <tbody>
+        <tr>
+            <td>
+                <a href="@MatchRowUrl("timehorizon")">
+                    Time Horizon
+                </a></td>
+            <td></td>
+            <td></td>
+            <td>@timeRisk</td>
+        </tr>
+
+        <tr>
+            <td>Investment Knowledge</td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="groupSubItem"><a href="@(MatchRowUrl("knowledge"))">Primary</a></td>
+            <td>@Breakdown.Profile.PrimaryClient.Knowledge.Level</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="groupSubItem"><a href="@(MatchRowUrl("knowledge", ReferenceTo.JointPlaceholder))">Joint</a></td>
+            <td>@Breakdown.Profile.JointClient?.Knowledge.Level</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td class="subtotalLabel" colspan="1">MIN():</td>
+            <td>@Breakdown.InvestmentKnowledge</td>
+            <td>@knowledgeRisk</td>
+        </tr>
+
+
+        <tr>
+            <td><a href="@MatchRowUrl("goal")">Investment Objectives (goals)</a></td>
+            <td></td>
+            <td></td>
+            <td>@objectivesRisk</td>
+        </tr>
+
+        <!--  ============ RISK CAPACITY ============ -->
+
+        <tr class="groupHeadingRow">
+            <td colspan="4">Risk Capacity:</td>
+        </tr>
+
+        @foreach (string[] row in _riskCapacityRows)
+        {
+            <tr>
+                <td class="@row[0]">
+                    @if (row[5] == "age")
+                    {
+                        <a>@row[1]</a>
+                    }
+                    else if (row[5] != "")
+                    {
+                        <a href="@($"{BaseUrl}#{row[5]}")">@row[1]</a>
+                    }
+                    else
+                    {
+                        @row[1]
+                    }
+                </td>
+                <td>@row[2]</td>
+                <td>@row[3]</td>
+                <td>@row[4]</td>
+            </tr>
+        }
+
+        <tr>
+            <td class="subtotalLabel" colspan="2">SubTotal:</td>
+            <td class="subtotalNumber">@_capacityTotal</td>
+            <td>@attitudeRisk</td>
+        </tr>
+
+        <!-- ========== RISK ATTITUDE ========== -->
+        <tr class="groupHeadingRow">
+            <td colspan="4">Risk Attitude:</td>
+        </tr>
+
+        @{
+            breakdown = Breakdown.RiskAttitude;
+        }
+        @foreach (KeyValuePair<string, int> answer in breakdown)
+        {
+            <tr>
+                <td class="groupSubItem">
+                    <a href="@MatchRowUrl(answer.Key)">@LabelKeys.GetValueOrDefault(answer.Key)</a>
+                </td>
+                <td></td>
+                <td>@answer.Value </td>
+                <td></td>
+            </tr>
+        }
+        <tr>
+            <td class="subtotalLabel" colspan="2">SubTotal:</td>
+            <td class="subtotalNumber">@breakdown.Sum(a => a.Value)</td>
+            <td>@attitudeRisk</td>
+        </tr>
+
+        <tr>
+            <td></td>
+            <td></td>
+            <td class="subtotalLabel">MIN()</td>
+            <td class="subtotalNumber">@minRisk</td>
+        </tr>
+        </tbody>
+    }
+</table>
+
+@code {
+
+    [Parameter]
+    public DecisionTable DecisionTable { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    private string BaseUrl => QLayout.BaseUrl;
+
+    private List<string[]> _riskCapacityRows;
+    private int _capacityTotal;
+
+    private static readonly string PrimaryPlaceholder = new Guid(1, 0, 0, new byte[8]).ToString();
+    private static readonly string JointPlaceholder = new Guid(2, 0, 0, new byte[8]).ToString();
+
+    protected override void OnParametersSet()
+    {
+        BreakdownVmVisitor breakdownVisitor = new BreakdownVmVisitor
+        {
+            ForJoint = Breakdown.Profile.IsJoint
+        };
+        _capacityTotal = breakdownVisitor.Visit(DecisionTable.DecisionBreakdown.RiskCapacity);
+
+        _riskCapacityRows = breakdownVisitor.Rows;
+    }
+
+    private static ReadOnlyDictionary<string, string> LabelKeys = new ReadOnlyDictionary<string, string>(
+        new Dictionary<string, string>
+        {
+            { "financialSituation", "Overall financial situation" },
+            { "percentageOfSavings", "Investment as percentage of total savings" },
+            { "incomeAmount", "Annual income amount" },
+            { "incomeStability", "Stability of current and future income sources" },
+            { "networth", "Net Worth" },
+            { "age", "Age" },
+            { "decisionMaking",  "Decision making" },
+            { "decline", "Decline willing to tolerate" },
+            { "actionOnLosses", "Action on losses" },
+            { "lossesOrGains", "Concern with losses vs gains" },
+            { "lossvsgainprofile", "Hypothetical profile based on losses"  },
+            { "hypotheticalProfile", "Hypothetical profile based on returns" }
+        });
+
+    private DecisionBreakdown Breakdown => DecisionTable.DecisionBreakdown;
+
+    private void BreakdownRowClickHandler(string questionKey, bool forJoint = false)
+    {
+        string url = MatchRowUrl(questionKey);
+
+        if (url.Length == 0)
+        {
+            return;
+        }
+
+        QLayout.NavigateAndHighlight(url, questionKey);
+    }
+
+    private string MatchRowUrl(string questionKey, ReferenceTo referenceTo = ReferenceTo.PrimaryPlaceholder)
+    {
+        string url;
+        switch (questionKey)
+        {
+            case "incomeAmount":
+            case "incomeStability":
+            case "financialSituation":
+            case "networth":
+            case "knowledge":
+                string idPlaceholder = referenceTo == ReferenceTo.PrimaryPlaceholder ? PrimaryPlaceholder : JointPlaceholder;
+
+                url = $"{BaseUrl}#/client/{idPlaceholder}/info/{questionKey}";
+
+                break;
+            case "age":
+                // is shown inline with row label
+                return "";
+            default:
+                url = NavigationManager.Uri.Replace("results", "expectations") + "/" + questionKey;
+                break;
+        }
+
+        return url;
+    }
+
+    private enum ReferenceTo
+    {
+        PrimaryPlaceholder,
+        JointPlaceholder
+    }
+}

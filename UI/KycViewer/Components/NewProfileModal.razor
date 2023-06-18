@@ -1,0 +1,167 @@
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Profile
+@using Microsoft.AspNetCore.Components.Forms
+@using AtaUiToolkit
+@using KycViewer.Validators
+@using KycViewer.Components.Navigation
+@using SharedKernel
+@using Ata.Investment.Profile.Domain.Points
+
+@inject NavigationManager NavigationManager
+
+<datalist id="commonProfiles">
+  <option value="Making a big purchase"></option>
+  <option value="Retirement"></option>
+  <option value="Children's education"></option>
+  <option value="Building a nest egg for the future"></option>
+</datalist>
+
+<Modal Title="@_newProfileVO.ProfileFor" Opened="@Opened" @ref="@_parentModal" Closeable="true" CloseHandler="@(() => CloseHandler.InvokeAsync())">
+    <EditForm Model="@_newProfileVO" OnValidSubmit="@AddProfileToDocument" name="newProfile" slot="body" autocomplete="off">
+        <ObservableValidator
+            ValidatorType="@(typeof(NewProfileVoValidator))"
+            ConstructorParams="@(new object[] {KycDocument})"
+            OnValidationStateChanged="@((isValid) => _isValid = isValid)" />
+
+        <ImageSelector
+            BasePath="/_content/KycViewer/icons"
+            Options="@(new List<string> {"dollar", "education", "nest-egg", "purchase", "retirement"})"
+            @bind-Value="@_newProfileVO.Icon"
+            />
+
+        <label for="profileName">
+            Profile name:<br>
+            <RealtimeInputText list="commonProfiles" @bind-Value="@_newProfileVO.Name" id="profileName" name="profileName" class="form-control" />
+        </label>
+
+        @{
+            Accounts a = _newProfileVO.Accounts;
+        }
+
+        @if(!NewProfileEvent.IsJoint) {
+            <label><InputCheckbox @bind-Value="@a.RRSP" /><span></span>RRSP</label>
+            <label><InputCheckbox @bind-Value="@a.LIRA" /><span></span>LIRA</label>
+            <label><InputCheckbox @bind-Value="@a.TFSA" /><span></span>TFSA</label>
+            <label><InputCheckbox @bind-Value="@a.LIF" /><span></span>LIF</label>
+            <label><InputCheckbox @bind-Value="@a.RIF" /><span></span>RIF</label>
+        } else {
+            <span></span><span></span><span></span><span></span><span></span>
+        }
+        <label><InputCheckbox @bind-Value="@a.RESP" /><span></span>RESP</label>
+        <label><InputCheckbox @bind-Value="@a.NonReg" /><span></span>Non-Reg</label>
+        <label><InputCheckbox @bind-Value="@a.RDSP" /><span></span>RDSP</label>
+
+        <div style="grid-column: 1 / span 8; margin-top: 0.5em;">In how many years do you expect to need to withdraw a significant portion (1/3) of the money?</div>
+
+        <div class="yearSelection">
+            <InputRadioGroup Name="timehorizon" @bind-Value="@TimeYear">
+                <label class="radio-group-label"><InputRadio Value="0"/><span>Less than 1 year</span></label>
+                <label class="radio-group-label"><InputRadio Value="1"/><span>1 - 3</span></label>
+                <label class="radio-group-label"><InputRadio Value="4"/><span>4 - 7</span></label>
+                <label class="radio-group-label"><InputRadio Value="8"/><span>8 - 15</span></label>
+                <label class="radio-group-label"><InputRadio Value="16"/><span>16 or more</span></label>
+            </InputRadioGroup>
+        </div>
+
+        <button type="submit" disabled="@(!_isValid)" class="btn btn-success" id="addProfileBtn">Add</button>
+    </EditForm>
+</Modal>
+
+
+@code {
+#nullable enable
+    // ReSharper disable MemberCanBePrivate.Global
+    // ReSharper disable UnusedAutoPropertyAccessor.Global
+    [Parameter]
+    public bool Opened { get; set; }
+
+    [Parameter]
+    public NewProfileSelectionEvent NewProfileEvent { get; set; }
+
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+    
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [Parameter]
+    public EventCallback CloseHandler { get; set; }
+
+    private int _timeYear;
+
+    private int TimeYear
+    {
+        get => _timeYear;
+        set
+        {
+            _timeYear = value;
+
+            int originYear = KycDocument.Date.Year;
+            _newProfileVO.TimeHorizon.Range = ProfilePoints.MatchRiskRange(value) + originYear;
+            _newProfileVO.TimeHorizon.ResetThirdWithdrawTime();
+        }
+    }
+
+    // ReSharper enable MemberCanBePrivate.Global
+    // ReSharper enable UnusedAutoPropertyAccessor.Global
+
+    private NewProfileVO _newProfileVO;
+
+    private bool _isValid;
+
+#pragma warning disable 649
+    private Modal _parentModal;
+#pragma warning restore 649
+
+#nullable disable
+
+    protected override void OnParametersSet()
+    {
+        // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+        if (!NewProfileEvent.IsJoint)
+        {
+            PClient primaryOwner = KycDocument.GetClientById(NewProfileEvent.ForClientId);
+            _newProfileVO = new NewProfileVO(primaryOwner, KycDocument);
+        }
+        else
+        {
+            _newProfileVO = new NewProfileVO(KycDocument.PrimaryClient, KycDocument.JointClient, KycDocument);
+        }
+
+        _newProfileVO.TimeHorizon = new TimeHorizon(Meeting.Date.Year)
+        {
+            Range = new SharedKernel.Range(NewProfileEvent.From, NewProfileEvent.To)
+        };
+
+        if (Opened)
+        {
+            _timeYear = ProfilePoints.RoundTimeHorizon(_newProfileVO.TimeHorizon.WithdrawTime);
+        }
+        _isValid = false;
+    }
+
+    private void AddProfileToDocument()
+    {
+        Profile profile = Profile.CreateFromVO(_newProfileVO);
+        if (!_newProfileVO.IsJoint)
+        {
+            PClient primaryOwner = KycDocument.GetClientById(NewProfileEvent.ForClientId);
+            primaryOwner.AddProfile(profile);
+        }
+        else
+        {
+            KycDocument.AddJointProfile(profile);
+        }
+
+        Opened = false;
+        CloseHandler.InvokeAsync();
+
+        QLayout.ValidationObserver.ProfileAddedHandler(profile);
+        string profileUrl = $"{QLayout.BaseUrl}#{(_newProfileVO.IsJoint ? "" : $"/client/{_newProfileVO.Primary.Guid}")}/profile/{profile.Guid}/expectations";
+        NavigationManager.NavigateTo(profileUrl);
+    }
+}

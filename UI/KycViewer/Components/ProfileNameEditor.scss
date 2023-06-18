@@ -1,0 +1,39 @@
+#profileInfo {
+  grid-area: info;
+}
+
+.profileNamePanelBody {
+  margin-left: -1.5em;
+  margin-right: -0.5em;
+}
+
+#profileInfo section {
+  display: grid;
+  grid-template-columns: 5em 5em 4.3em 4.7em 4em 4em 5em 6em 4.6em 0.8fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  grid-row-gap: 1em;
+  align-items: center;
+
+  img {
+    width: 5em;
+  }
+
+  input[name="profileName"] {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  label[for="obj_initialInvestment"],
+  label[for="obj_monthlyCommitment"] {
+    margin-left: 1em
+  }
+
+  .flex-row {
+    display: flex;
+    align-items: center;
+
+    label {
+      flex: 9em;
+    }
+  }
+}

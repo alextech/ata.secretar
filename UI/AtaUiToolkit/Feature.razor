@@ -1,0 +1,45 @@
+@using Microsoft.FeatureManagement
+@using System.Threading.Tasks;
+@using System.Collections.Generic;
+@using System.Linq;
+
+@inject IFeatureManagerSnapshot FeatureManager
+
+@if (_enabled)
+{
+    @ChildContent
+}
+
+@code {
+
+    [Parameter]
+    public string Name { get; set; }
+
+    [Parameter]
+    public RequirementType Requirement { get; set; } = RequirementType.All;
+
+    [Parameter]
+    public bool Negate { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    private bool _enabled;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        IEnumerable<string> names = Name.Split(',').Select(n => n.Trim());
+
+        _enabled = Requirement == RequirementType.All ?
+            names.Select(async n => await FeatureManager.IsEnabledAsync(n).ConfigureAwait(false))
+                .All(n => n.Result) :
+            names.Select(async n => await FeatureManager.IsEnabledAsync(n).ConfigureAwait(false))
+                .Any(n => n.Result);
+
+        if (Negate)
+        {
+            _enabled = !_enabled;
+        }
+    }
+
+}

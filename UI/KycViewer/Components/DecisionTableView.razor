@@ -1,0 +1,86 @@
+@using System.Data
+@using Ata.Investment.Profile.Domain.Points
+
+@if (_pivotView != null)
+{
+
+    <table>
+        <thead>
+        <th></th>
+        <th class="@(_riskColumnIdx == 0 ? "selectedColumnHeading" : "")"><span>1</span><br /><span>Safety</span></th>
+        <th class="@(_riskColumnIdx == 1 ? "selectedColumnHeading" : "")"><span>2</span><br /><span>Conservative Income</span></th>
+        <th class="@(_riskColumnIdx == 2 ? "selectedColumnHeading" : "")"><span>3</span><br /><span>Balanced</span></th>
+        <th class="@(_riskColumnIdx == 3 ? "selectedColumnHeading" : "")"><span>4</span><br /><span>Growth</span></th>
+        <th class="@(_riskColumnIdx == 4 ? "selectedColumnHeading" : "")"><span>5</span><br /><span>Aggressive Growth</span></th>
+        </thead>
+        <tbody>
+        <tr>
+            <th>Time Horizon</th>
+            @{
+                DataRow row = _pivotView.Rows[0];
+                @for (int i = 0; i < 5; i++)
+                {
+                    
+                    <td class="@(_riskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                }
+            }
+        </tr>
+        <tr>
+            <th>Investment Knowledge</th>
+            @{
+                row = _pivotView.Rows[1];
+                @for (int i = 0; i < 5; i++)
+                {
+                    <td class="@(_riskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                }
+            }
+        </tr>
+        <tr>
+            <th>Investment Objectives</th>
+            @{
+                row = _pivotView.Rows[2];
+                @for (int i = 0; i < 5; i++)
+                {
+                    <td class="@(_riskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                }
+            }
+        </tr>
+        <tr>
+            <th>Risk Capacity</th>
+            @{
+                row = _pivotView.Rows[3];
+                @for (int i = 0; i < 5; i++)
+                {
+                    <td class="@(_riskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                }
+            }
+        </tr>
+        <tr>
+            <th>Risk Attitude</th>
+            @{
+                row = _pivotView.Rows[4];
+                @for (int i = 0; i < 5; i++)
+                {
+                    <td class="@(_riskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "") lastRow">&nbsp;</td>
+                }
+            }
+        </tr>
+        </tbody>
+    </table>
+}
+
+@code {
+
+    [Parameter]
+    public DecisionTable DecisionTable { get; set; }
+
+    private DataTable _pivotView;
+    private int _riskColumnIdx;
+    
+    protected override void OnParametersSet()
+    {
+        _pivotView = DecisionTable.Pivot;
+        _riskColumnIdx = DecisionTable.SuggestedAllocation.RiskLevel - 1;
+    }
+
+}

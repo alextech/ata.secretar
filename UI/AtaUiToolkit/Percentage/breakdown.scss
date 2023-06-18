@@ -1,0 +1,60 @@
+
+
+:host form {
+  display: grid;
+  grid-auto-flow: column;
+
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(5, 1.5em) 0.1em 1.5em;
+  align-items: center;
+  grid-row-gap: 1.5em;
+}
+
+:host .ata-numeric {
+  display: flex;
+  margin-left: -1px;
+  align-items: center;
+}
+
+:host .input-group {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+}
+
+:host .form-control {
+  position: relative;
+  flex: 1 1 auto;
+  width: 1%;
+  margin-bottom: 0;
+  text-align: right;
+  display: block;
+  padding: 0.275em 0.5em;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #868e96;
+  border-radius: 0;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+:host .input-group-text {
+  padding: 0.275em 0.5em;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #495057;
+  text-align: center;
+  white-space: nowrap;
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+}
+
+:host .is-invalid {
+  border-color: #dc3545;
+}

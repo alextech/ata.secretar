@@ -1,0 +1,16 @@
+.input-group {
+
+  input {
+    text-align: right;
+  }
+
+  span {
+    width: 1em;
+    height: 1.5em;
+
+    svg {
+      height: 1.2em;
+      margin-top: 0.15em;
+    }
+  }
+}

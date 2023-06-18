@@ -1,0 +1,29 @@
+form[name="newProfile"] {
+  color: #343a40;
+  display: grid;
+  grid-template-columns: repeat(4, 4.9em) 1.3fr 1fr;
+  grid-template-rows: 1fr 0.5fr 1fr 1fr 0.5fr;
+  grid-auto-flow: row;
+  grid-row-gap: 0.5em;
+  grid-column-gap: 0.5em;
+
+  label.longField {
+    grid-column: 1 / span 6;
+  }
+
+  button {
+    grid-column: 6;
+  }
+
+  #profileName {
+    padding-right: 0;
+    padding-left: 0;
+
+  }
+
+  br {
+    content: ' ';
+    display: block;
+    margin: 0.2em;
+  }
+}

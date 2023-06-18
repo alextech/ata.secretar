@@ -1,0 +1,206 @@
+@using Microsoft.JSInterop
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.KYC
+@using KycViewer.Components
+@using KycViewer.Validators
+
+@inject NavigationManager NavigationManager
+
+@inject IJSRuntime JSRuntime;
+
+@if (KycDocument != null)
+{
+  bool ro = Meeting.IsCompleted;
+
+  <EditForm Model="@PClient" id="clientInfoView">
+    <ObservableValidator ValidatorType="@(typeof(PClientValidator))" NavigationPath="@QLayout.ClientPath" />
+    <ClientStatus Client="@PClient" />
+
+    <ata-panel data-title="Income @(IsAdvisor ? "(MFDA Q4, Q5, Q6: Towards Risk Capacity)" : "")" id="personalInfo">
+      <section slot="body">
+        <label for="annualIncome">Client approximate annual income:</label>
+        <ata-numeric type="currency" data-id="annualIncome" @bind-Value="@PClient.Income.Amount" @bind-Value:event="oninput" readonly="@ro"/>
+
+        @* MFDA: Q4 *@
+        <div id="incomeAmount" class="animationBox"><div class="question">
+          <label for="householdIncome">Annual household income:</label>
+        </div></div>
+        <ata-numeric type="currency" data-id="householdIncome" value="@TotalHouseholdIncome" readonly/>
+
+        <div style="grid-column: 1/3" class="radio-groups">
+          @* MFDA: Q5 *@
+          <div id="incomeStability" class="animationBox" style="grid-column: 1 / 3"><div class="question">
+            @if(IsAdvisor) { <span><i class="fas fa-warehouse pointsTowardsIcon"></i> (MFDA Q5: Towards Risk Capacity)</span> } Your current and future income sources are:
+          </div></div>
+          <InputRadioGroup Name="stability`" @bind-Value="@PClient.Income.Stability">
+            <label class="radio-group-label"><InputRadio Value="8" disabled="@ro" /><span>@($" {(IsAdvisor ? "(8)" : "")} Stable")</span></label>
+            <label class="radio-group-label"><InputRadio Value="4" disabled="@ro" /><span>@($" {(IsAdvisor ? "(4)" : "")} Somewhat stable")</span></label>
+            <label class="radio-group-label"><InputRadio Value="1" disabled="@ro" /><span>@($" {(IsAdvisor ? "(1)" : "")} Unstable")</span></label>
+          </InputRadioGroup>
+
+          @* MFDA: Q6 *@
+          <div id="financialSituation" class="animationBox" style="grid-column: 1 / 3"><div class="question">
+            @if(IsAdvisor) { <span><i class="fas fa-warehouse pointsTowardsIcon"></i> (MFDA Q6: Towards Risk Capacity) </span>} How would you classify your overall financial situation:
+          </div></div>
+          <InputRadioGroup Name="financialSituation" @bind-Value="@PClient.FinancialSituation">
+            <label class="radio-group-label"><InputRadio Value="0"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(0)" : "")} No savings and significant debt")</span></label>
+            <label class="radio-group-label"><InputRadio Value="2"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(2)" : "")} Little savings and a fair amount of debt")</span></label>
+            <label class="radio-group-label"><InputRadio Value="5"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(5)" : "")} Some savings and some debt")</span></label>
+            <label class="radio-group-label"><InputRadio Value="7"  disabled="@ro" /><span>@($" {(IsAdvisor ? "(7)" : "")} Some savings and little or no debt")</span></label>
+            <label class="radio-group-label"><InputRadio Value="10" disabled="@ro" /><span>@($" {(IsAdvisor ? "(10)" : "")} Significant savings and little or no debt")</span></label>
+          </InputRadioGroup>
+        </div>
+      </section>
+
+
+      @if (IsAdvisor)
+      {
+        <div slot="tooltip">
+          Annual income range answers MFDA <span class="answersMFDA">Q4</span> - points towards <span class="pointsTowards">Risk Capacity</span>
+          <br/>
+          <strong>Note:</strong> annual income (unlike networth) is not combined unless profile is explicitly joined.
+          <ul >
+            <li>Less than $25,000 (0 points)</li>
+            <li>$25,000 – $49,999 (2 points)</li>
+            <li>$50,000 – $74,999 (4 points)</li>
+            <li>$75,000 – $99,999 (5 points)</li>
+            <li>$100,000 – $199,999 (7 points)</li>
+            <li>$200,000 or more (10 points)</li>
+          </ul>
+
+          The client’s annual gross income is used to assist in assessing the client’s financial situation. In the case of a joint account, the primary owner’s income and the joint owner’s income must be recorded separately.
+        </div>
+      }
+    </ata-panel>
+    <textarea is="ata-rich-editor" name="income_notes" class="notes" title="Income notes"></textarea>
+
+    @* MFDA: Q7 *@
+    <ata-panel data-title="Net Worth @(IsAdvisor ? "(MFDA Q7: Towards Risk Capacity)" : "")" id="networthPanel">
+      <section slot="body" class="animationBox" id="networth"><div class="question"><div>
+          <label for="liquidAssets">Liquid Assets:</label>
+          <ata-numeric type="currency" @bind-Value="@PClient.NetWorth.LiquidAssets" @bind-Value:event="oninput" readonly="@ro" />
+
+          <label for="fixedAssets"><span class="mathSign">+</span>Fixed Assets:</label>
+          <ata-numeric type="currency" @bind-Value="@PClient.NetWorth.FixedAssets" @bind-Value:event="oninput" readonly="@ro" />
+
+
+          <label for="liabilities" class="liabilities"><span class="mathSign">&minus;</span>Liabilities:</label>
+          <ata-numeric type="currency" class="liabilities" @bind-Value="@PClient.NetWorth.Liabilities" @bind-Value:event="oninput" readonly="@ro" />
+
+          <div class="divider">
+            <hr>
+          </div>
+
+          <label for="networthTotal">Total:</label>
+          <ata-numeric type="currency" value="@PClient.NetWorth.Total" readonly />
+        </div></div>
+      </section>
+
+      <div slot="tooltip">
+        @if (IsAdvisor)
+        {
+          <span>
+            NetWorth income answers MFDA <span class="answersMFDA">Q7</span> - points towards <span class="pointsTowards">Risk Capacity</span>
+            <br/>
+            <strong>Note:</strong> networth is combined for both single and joint profiles.
+          </span>
+
+          <ul>
+            <li>Less than $40,000 (0 points)</li>
+            <li>$40,000 – $99,999 (2 points)</li>
+            <li>$100,00 – 199,999 (4 points)</li>
+            <li>$200,00 – 500,000 (6 points)</li>
+            <li>$500,001 - $999,999 (8 points)</li>
+            <li>$1,000,000 or more (10 points)</li>
+          </ul>
+        }
+
+        <p>
+          <i>Liquid Assets + Fixed Assets &minus; Liabilities = Net Worth</i>
+        </p>
+        <p>Net worth should only include assets of the account holder and his or her spouse.</p>
+        <p><strong>Liquid Assets</strong>: An asset that can be converted into cash quickly, with minimal impact to the price received in the open market. Liquid assets include money market instruments, government bonds and cash, assuming they are held outside of a registered account. Market based investments, and non-redeemable CIG would NOT be considered liquid assets as there would be taxes or penalties owing on withdrawal.</p>
+        <p><strong>Fixed Assets</strong>: An asset that was purchased for long-term use and cannot likely to be converted quickly into cash, such as market based investments, and real estate.</p>
+        <p><strong>Liabilities</strong>: Debts that are owing and will continue to be owing beyond the next 12 months. Generally includes mortgages, lines of credit and car loans.</p>
+      </div>
+    </ata-panel>
+    <textarea is="ata-rich-editor" name="networth_notes" class="notes" title="Networth notes"></textarea>
+
+    <ata-panel id="knowledgePanel" data-title="Investment Knowledge @(IsAdvisor ? "(MFDA Q2: Knowledge)" : "")">
+      <section slot="body" class="animationBox" id="knowledge">
+        <div class="question">
+          <InputRadioGroup Name="knowledge" @bind-Value="@PClient.Knowledge.Level">
+            <label class="radio-group-label"><InputRadio Value="3" disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Balanced)" : "")} I have very little knowledge of investments and financial markets")</span></label>
+            <label class="radio-group-label"><InputRadio Value="4" disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Growth)" : "")} I have some level of knowledge of investments and financial markets.")</span></label>
+            <label class="radio-group-label"><InputRadio Value="5" disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Growth)" : "")} I have working investment knowledge; understand different investment products and follow financial markets closely.")</span></label>
+            <label class="radio-group-label"><InputRadio Value="6" disabled="@ro" /><span>@($" {(IsAdvisor ? "(Floor to Aggressive Growth)" : "")} I have in-depth investment knowledge.")</span></label>
+          </InputRadioGroup>
+        </div>
+      </section>
+
+      <div slot="tooltip">
+        If you have a high level of investment knowledge, you have a good understanding
+        of the relative risk of various types of investments and understand how the level of risk taken affects potential returns.
+        If you have very little knowledge of investments and financial markets, speculative and high risk investments
+        and strategies are likely not suitable options for you.
+      </div>
+    </ata-panel>
+    <textarea is="ata-rich-editor" name="knowledge_notes" class="notes" title="Knowledge notes"></textarea>
+
+    <input type="hidden" name="sectionMetadata" data-section="client" data-section-id="@PClient.Guid" />
+  </EditForm>
+}
+
+<Modal Title="Inadequate Knowledge" ModalType="@ModalType.WarningOK" @ref="@_knowledgeWarning">
+  You have select Investment Knowledge of "Little to None". A market based investment portfolio is not appropriate for
+ this knowledge level and the client should ONLY consider cash savings, such as GIC, or Accumulation Annuities.
+</Modal>
+
+@code
+{
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [Parameter]
+    public Guid ClientId { get; set; }
+
+    [Parameter]
+    public bool IsAdvisor { get; set; } = false;
+
+    private int TotalHouseholdIncome => KycDocument.PrimaryClient.Income.Amount + (KycDocument.JointClient?.Income.Amount ?? 0);
+
+    private PClient PClient;
+
+    private bool _showKnowledgeDialogue;
+
+    private Modal _knowledgeWarning;
+
+  protected override void OnParametersSet()
+  {
+    PClient = KycDocument.GetClientById(ClientId);
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+      await JSRuntime.InvokeVoidAsync("uiUtils.setRichTextValue", "income_notes",  PClient.Income.Notes);
+      await JSRuntime.InvokeVoidAsync("uiUtils.setRichTextValue", "networth_notes", PClient.NetWorth.Notes);
+      await JSRuntime.InvokeVoidAsync("uiUtils.setRichTextValue", "knowledge_notes", PClient.Knowledge.Notes);
+
+      bool ro = Meeting.IsCompleted;
+      await JSRuntime.InvokeVoidAsync("uiUtils.toggleReadOnlyRichTextValue", "income_notes", ro);
+      await JSRuntime.InvokeVoidAsync("uiUtils.toggleReadOnlyRichTextValue", "networth_notes", ro);
+      await JSRuntime.InvokeVoidAsync("uiUtils.toggleReadOnlyRichTextValue", "knowledge_notes", ro);
+    }
+
+    private void HandleValidSubmit()
+    {
+      //https://docs.microsoft.com/en-us/aspnet/core/blazor/forms-validation?view=aspnetcore-3.1
+        Console.WriteLine("Validated");
+    }
+}

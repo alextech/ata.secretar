@@ -1,0 +1,178 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.Household
+@using MediatR
+@using Ata.Investment.Allocation.Cmd
+@using Ata.Investment.ClientsList.ViewModels
+@using Ata.Investment.Profile.Cmd.Profile
+
+@inherits Microsoft.AspNetCore.Components.OwningComponentBase
+
+@inject IMediator MediatR
+@inject IJSRuntime JSRuntime;
+@inject NavigationManager NavigationManager;
+
+<section id="meetingsArea">
+    <div id="meetingsAreaToolbar">
+        @if (_allocationVersions == null)
+        {
+            <img src="@(CommonPaths.LoadingGif)" style="align-self: center" alt="loading"/>
+        }
+        else if (_allocationVersions.Any())
+        {
+        <div class="btn-group">
+            <button class="btn btn-secondary btn-sm" @onclick="@BeginMeeting"><i class="fas fa-folder-open"></i> Begin Meeting</button>
+
+            <div class="btn-group @(_versionsOpened ? "show" : "") versionSelection">
+                <button type="button" class="btn btn-secondary dropdown-toggle" @onclick="@(() => _versionsOpened = !_versionsOpened)">
+                    @_versionNumber
+                </button>
+                <div class="dropdown-menu @(_versionsOpened ? "show" : "")">
+                    @foreach (int versionNumber in _allocationVersions)
+                    {
+                        <a class="dropdown-item" @onclick="@(() => { _versionNumber = versionNumber; _versionsOpened = false; })">
+                            @versionNumber
+                        </a>
+                    }
+                </div>
+
+                <span class="tooltiptext">Allocation version to use for points result.</span>
+            </div>
+        </div>
+        }
+        else
+        {
+            <div>Cannot start meeting: no publicly listed allocation versions.</div>
+        }
+        <div id="meetingListItemControls">
+            @{
+                bool disabled = _selectedMeetingVM == null;
+                string disabledCss = disabled ? "disabled" : "";
+                string meetingLink = disabled ? "#" : $"/meeting/{_selectedMeetingVM.MeetingGuid}";
+                string quickViewLink = disabled ? "#" : $"/meeting/{_selectedMeetingVM.MeetingGuid}/QuickView";
+
+                string pdfDisabledCss = disabled || (!_selectedMeetingVM?.IsComplete ?? true) ? "disabled" : "";
+            }
+            <a class="btn btn-secondary @disabledCss" href="@($"{meetingLink}?viewMode={CLIENT_MODE}")" target="@(_openNewTab ? "_blank" : false)"><i class="fas fa-user"></i> As Client</a>
+            <a class="btn btn-secondary @disabledCss" href="@($"{meetingLink}?viewMode={ADVISOR_MODE}#")" target="@(_openNewTab ? "_blank" : false)"><i class="fas fa-id-card-alt"></i> As Advisor</a>
+            <a class="btn btn-secondary @pdfDisabledCss" href="@($"{meetingLink}/pdf")" target="_top"><i class="fas fa-print"></i> PDF</a>
+            <Feature Name="ProcessingTeam_QuickView">
+            <a class="btn btn-secondary @pdfDisabledCss" href="@quickViewLink"><i class="fas fa-file-export"></i> Processing Team View</a>
+            </Feature>
+            <button class="btn btn-secondary" @onclick="DispatchMeetingCloneCommand" disabled="@(_selectedMeetingVM == null)"><i class="fas fa-copy"></i> Clone</button>
+        </div>
+    </div>
+
+    <ProfileList Household="@Household" BaseUrl="@BaseUrl" Year="@Year"
+                 OnMeetingSelectionChanged="@SetMeetingSelectionChange"
+                 @ref="@_profileListCmp"/>
+
+    <label><input type="checkbox" checked="@_openNewTab" @onchange="@(() => _openNewTab = !_openNewTab)"/> Open profiles in new tab</label>
+</section>
+
+@code {
+
+    public const string ADVISOR_MODE = "advisor";
+    public const string CLIENT_MODE = "client";
+
+    private ProfileList _profileListCmp;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    [Parameter]
+    public Household Household { get; set; }
+
+    [Parameter]
+    public string BaseUrl { get; set; }
+
+    [Parameter]
+    public int Year { get; set; }
+
+    #nullable enable
+    private MeetingSelectionVM? _selectedMeetingVM;
+    #nullable disable
+
+    private int _versionNumber;
+
+    private IEnumerable<int> _allocationVersions;
+
+    private bool _versionsOpened;
+
+    private bool _openNewTab = false;
+
+    private Guid _previousHouseholdId = Guid.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allocationVersions = (await MediatR.Send(new ListedAllocationVersionsQuery())).ToList();
+
+        if (_allocationVersions.Any())
+        {
+            _versionNumber = _allocationVersions.First();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_previousHouseholdId == Household.Guid) return;
+        _selectedMeetingVM = null;
+
+        _previousHouseholdId = Household.Guid;
+    }
+
+    private async Task BeginMeeting(MouseEventArgs e)
+    {
+        if (Household.Guid == Guid.Empty)
+        {
+            return;
+        }
+
+        Guid newMeetingId = (await MediatR.Send(
+            new BeginMeetingCommand(Household.Guid, _versionNumber)
+        )).Data;
+
+        await _profileListCmp.Refresh();
+
+        string newMeetingUrl = $"/meeting/{newMeetingId}?viewMode={CLIENT_MODE}";
+
+        if (_openNewTab)
+        {
+            await JSRuntime.InvokeVoidAsync("uiUtils.openNewTab", newMeetingUrl);
+        }
+        else
+        {
+            NavigationManager.NavigateTo(newMeetingUrl);
+        }
+
+    }
+
+    private void SetMeetingSelectionChange(MeetingSelectionVM selectedMeetingVM)
+    {
+        _selectedMeetingVM = selectedMeetingVM;
+    }
+
+    private async Task DispatchMeetingCloneCommand()
+    {
+        if (Household.Guid == Guid.Empty || _selectedMeetingVM == null)
+        {
+            return;
+        }
+
+        Guid newMeetingId = (await MediatR.Send(new CloneProfileFromMeetingCommand(_selectedMeetingVM.MeetingGuid))).Data;
+        await _profileListCmp.Refresh();
+
+        string cloneMeetingUri = $"/meeting/{newMeetingId}?viewMode={ADVISOR_MODE}";
+        if (_openNewTab)
+        {
+            await JSRuntime.InvokeVoidAsync("uiUtils.openNewTab",cloneMeetingUri);
+        }
+        else
+        {
+            NavigationManager.NavigateTo(cloneMeetingUri);
+        }
+
+    }
+
+}

@@ -1,0 +1,68 @@
+﻿@using Ata.Investment.Profile.Domain.Profile
+@using Microsoft.JSInterop
+@using Ata.Investment.Profile.Domain.Points
+@using Range = SharedKernel.Range
+
+@inject IJSRuntime JSRuntime;
+
+@implements IDisposable;
+
+<ata-timeline-item
+    item-id="@Profile.Guid"
+    start="@Profile.TimeHorizon.Range.Min" end="@Profile.TimeHorizon.Range.Max"
+    iconYear="@Profile.TimeHorizon.WithdrawYear">
+
+    <a href="@BaseProfileUrl/expectations" slot="itemIcon">
+        <img src="/_content/KycViewer/icons/@(Profile.Meta.Icon).png" alt="@Profile.Name" />
+    </a>
+
+</ata-timeline-item>
+
+@code {
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [Parameter]
+    public Profile Profile { get; set; }
+
+    private string BaseProfileUrl => $"{QLayout.BaseUrl}#{(!Profile.IsJoint ? $"/client/{Profile.PrimaryClient.Guid}" : "")}/profile/{Profile.Guid}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        Profile.TimeHorizon.TimeHorizonChanged += TimeHorizonChangedHandler;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await JSRuntime.InvokeAsync<string>(
+            "uiUtils.registerTimelineItemBridge",
+            DotNetObjectReference.Create<TimelineItem>(this)
+            );
+    }
+
+    private void TimeHorizonChangedHandler()
+    {
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void ItemChangedHandler(Guid eventItemId, int start, int end, int iconYear)
+    {
+        if (eventItemId != Profile.Guid) return;
+
+        Console.WriteLine("profile changed:"+eventItemId);
+
+        Profile.TimeHorizon.Range = new Range(Math.Min(start, end), Math.Max(start, end));
+        Profile.TimeHorizon.WithdrawYear = iconYear;
+    }
+
+    public void Dispose()
+    {
+        Profile.TimeHorizon.TimeHorizonChanged -= TimeHorizonChangedHandler;
+    }
+
+}

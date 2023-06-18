@@ -1,0 +1,149 @@
+#resultsView {
+  max-width: 840px;
+  display: grid;
+  grid-template-areas:
+    "info  info"
+    "recom recom"
+    "objectives risk"
+    "breakdown breakdown";
+  grid-row-gap: 1em;
+  grid-column-gap: 4em;
+
+
+  // For history graphs which are disabled currently
+  //.resultRiskGraph {
+  //  h1:first-of-type {
+  //    margin-top: 0;
+  //  }
+  //
+  //  label {
+  //    float: right;
+  //  }
+  //
+  //  h1 img {
+  //    width: 1.5em;
+  //    margin-left: 0.5em;
+  //    vertical-align: middle;
+  //    animation: spin 2s infinite linear;
+  //  }
+  //}
+
+  #recommendationPanel {
+    grid-area: recom;
+  }
+
+  .recommendations {
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .charts {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+
+      .btn-group {
+        display: flex;
+      }
+
+      .btn-secondary {
+        flex: 1;
+        background: #fff;
+      }
+    }
+
+    // ========== Decision Table
+    .selectedColumnHeading {
+      border-left: 2px solid orangered;
+      border-top: 2px solid orangered;
+      border-right: 2px solid orangered;
+
+    }
+
+    .selectedColumnCell {
+      border-left: 2px solid orangered;
+      border-right: 2px solid orangered;
+    }
+
+    .selectedColumnCell.lastRow {
+      border-left: 2px solid orangered;
+      border-right: 2px solid orangered;
+      border-bottom: 2px solid orangered;
+    }
+
+    .selectedCell {
+      background-color: black
+    }
+
+    th {
+      text-align: center;
+      vertical-align: top;
+    }
+
+    thead th:first-child {
+      width: 12em;
+    }
+
+    thead th:not(:first-child) {
+      width: 7em;
+    }
+  }
+
+  ata-percentage-breakdown[data-name="profile_objectives"] {
+    grid-area: objectives;
+  }
+
+  ata-percentage-breakdown[data-name="profile_risk"] {
+    grid-area: risk;
+  }
+
+  #breakdownPanel {
+    @include shadow();
+
+    grid-area: breakdown;
+
+    background-color: white;
+
+    th:not(:first-child) {
+      width: 10%;
+    }
+
+    td {
+      padding: 0.4em;
+    }
+
+    .groupHeadingRow {
+      background-color: rgba(24, 121, 195, 0.5) !important;
+    }
+
+    .groupSubItem {
+      padding-left: 2em;
+    }
+
+    .jointSubItem {
+      padding-left: 4em;
+    }
+
+    .subtotalLabel,
+    .subtotalRow + td {
+      text-align: right;
+      border-top: double;
+    }
+
+    .subtotalNumber {
+      border-top: double;
+    }
+
+    a {
+      padding: 0;
+
+      &:hover {
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+//@keyframes spin { 100% { transform:rotate(360deg); } }

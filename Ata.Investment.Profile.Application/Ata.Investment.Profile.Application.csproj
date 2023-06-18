@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <LangVersion>10</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="8.1.1" />
+      <PackageReference Include="MediatR" Version="9.0.0" />
+      <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+      <PackageReference Include="SendGrid" Version="9.21.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Profile\Ata.Investment.Profile.Cmd\Ata.Investment.Profile.Cmd.csproj" />
+      <ProjectReference Include="..\Ata.Investment.Profile.Data\Ata.Investment.Profile.Data.csproj" />
+      <ProjectReference Include="..\Ata.Investment.Profile.Domain\Ata.Investment.Profile.Domain.csproj" />
+      <ProjectReference Include="..\Ata.Investment.ProfileV1.Pdf\Ata.Investment.ProfileV1.Pdf.csproj" />
+      <ProjectReference Include="..\Web\Ata.Investment.AuthCore\Ata.Investment.AuthCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Households\SaveHouseholdCommandHandler.cs" />
+    </ItemGroup>
+
+</Project>

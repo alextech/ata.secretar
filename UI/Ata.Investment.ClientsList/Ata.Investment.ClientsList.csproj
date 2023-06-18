@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="8.1.1" />
+    <PackageReference Include="MediatR" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Forms" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.2.2" />
+<!--    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="5.0.0" />-->
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Allocation\Ata.Investment.Allocation.Cmd\Ata.Investment.Allocation.Cmd.csproj" />
+    <ProjectReference Include="..\..\BC_History\History.Cmd\History.Cmd.csproj" />
+    <ProjectReference Include="..\..\BC_Schedule\Ata.Investment.Schedule.Cmd\Ata.Investment.Schedule.Cmd.csproj" />
+    <ProjectReference Include="..\..\Profile\Ata.Investment.Profile.Cmd\Ata.Investment.Profile.Cmd.csproj" />
+    <ProjectReference Include="..\AtaUiToolkit\AtaUiToolkit.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Shared" />
+  </ItemGroup>
+
+</Project>

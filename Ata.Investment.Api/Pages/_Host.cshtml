@@ -1,0 +1,54 @@
+@page "/"
+
+@using Ata.Investment.Api.Pages
+
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model _Host
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <base href="~/" />
+    <link rel="icon"
+              type="image/png"
+              href="/img/favicon.png">
+    <title>TSG Investments</title>
+
+    <environment include="Development,Testing">
+        <script type="text/javascript" src="/dist/runtime-bundle.js" asp-append-version="true"></script>
+        <script type="text/javascript" src="/dist/vendors-bundle.js" asp-append-version="true"></script>
+
+        <link rel="stylesheet" href="/dist/_Host-bundle.css" asp-append-version="true"/>
+        <script type="text/javascript" src="/dist/_Host-bundle.js" asp-append-version="true"></script>
+    </environment>
+
+    <environment exclude="Development,Testing">
+        <script type="text/javascript" src="/dist/runtime-bundle.min.js" asp-append-version="true"></script>
+        <script type="text/javascript" src="/dist/vendors-bundle.min.js" asp-append-version="true"></script>
+        
+        <link rel="stylesheet" href="/dist/_Host-bundle.min.css" asp-append-version="true"/>
+        <script type="text/javascript" src="/dist/_Host-bundle.min.js" asp-append-version="true"></script>
+    </environment>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0/css/fontawesome.css" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0/css/solid.min.css" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0/css/regular.min.css" type="text/css" />
+
+    <script type="text/javascript">
+        localStorage.setItem('user_guid', '@Model.UserGuid');
+    </script>
+</head>
+<body>
+
+<img src="/_content/AtaUiToolkit/css/loadingTransparent.gif" style="position: absolute; right: 47%; top: 50%" alt="loading"/>
+
+@* <component type="typeof(Ata.Investment.Api.App)" render-mode="Server" /> *@
+
+@* <script src="_framework/blazor.server.js"></script> *@
+<script src="_framework/blazor.webassembly.js"></script>
+
+</body>
+</html>

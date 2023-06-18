@@ -1,0 +1,44 @@
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+
+@import "../variables";
+
+@import "~bootstrap/scss/button-group";
+@import "~bootstrap/scss/buttons";
+
+
+.btn-secondary {
+  //flex: 1;
+  background: #fff;
+  display: block;
+}
+
+/* composition legend */
+.legend {
+  display: grid;
+  grid-template-columns: 1fr 2fr 0.2fr 0.5fr;
+  grid-template-rows: repeat(3, 1.2em);
+  align-items: center;
+  margin-right: 1em;
+}
+
+// colors
+.legend span:nth-child(4n+1){
+  display: block;
+  width: 2em;
+  height: 0.8em;
+  justify-self: end;
+}
+
+// name
+.legend span:nth-child(4n+2) {
+  margin-left: 1em;
+}
+
+// percent
+.legend span:nth-child(4n) {
+  justify-self: end;
+}
+
+

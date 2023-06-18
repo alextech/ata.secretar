@@ -1,0 +1,260 @@
+﻿//@import "../../Components/Shared/Radio";
+//@import "~bootstrap/scss/_functions";
+//@import "~bootstrap/scss/variables";
+//@import "~bootstrap/scss/mixins";
+
+//@import "~atauitoolkit/variables";
+//@import "~bootstrap/scss/forms";
+//@import "~bootstrap/scss/input-group";
+//@import "~bootstrap/scss/buttons";
+//@import "~bootstrap/scss/button-group";
+//$enable-rounded: true;
+//@import "~bootstrap/scss/popover";
+$enable-rounded: false;
+
+@import "~atauitoolkit/Numeric";
+@import "~atauitoolkit/styleUtils/effects";
+@import "~atauitoolkit/styleUtils/mixins";
+
+@import "../Components/ClientEditorModal";
+@import "../Components/ProfileList";
+@import "../Components/ScheduleMeetingModal.scss";
+
+main#clientsList {
+  grid-template-areas:
+          "client_list client_list"
+          ".           tab_controls"
+          "client_info profile_list";
+  grid-template-rows: 20em auto  1fr;
+  grid-template-columns: 1fr 1.7fr;
+  grid-column-gap: 1em;
+  grid-row-gap: 1em;
+}
+
+.client-name-column {
+  min-width: 12em;
+}
+
+/** CONTROLS SECTION */
+
+.sub-nav .input-group-sm {
+  display: flex;
+  margin-left: auto;
+}
+
+/* CLIENT LIST SECTION */
+#clientsListTable {
+  grid-area: client_list;
+  overflow-y: auto;
+  border-bottom: solid 1px #cbcbcb;
+
+  table {
+    width: 100%;
+
+    tbody {
+      position: relative;
+    }
+  }
+
+  table.isLoading tbody {
+    &:after {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.3);
+      content: url("../../AtaUiToolkit/wwwroot/css/loadingTransparent.gif");
+      height: 17.8em;
+      padding-left: 38%;
+      padding-top: 9%;
+    }
+  }
+
+  th.lastEmailColumn {
+    width: 100%;
+  }
+  
+  th {
+    position: sticky;
+    text-align: left;
+    min-width: 11em;
+    z-index: 1;
+  }
+
+  th:last-child {
+    min-width: 5em;
+  }
+
+  td:last-child {
+    text-align: center;
+  }
+
+  input[type="checkbox"] {
+    opacity: 1;
+    padding: 0.5em;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0 0 0 0.5em;
+  }
+
+  .dropdown-menu {
+    margin-left: -6em;
+  }
+
+  .dropdown-menu button{
+    line-height: 1em;
+    float: right;
+    margin-right: 0.5em;
+  }
+
+  i.is-active {
+    color: $ata-blue;
+  }
+}
+
+/* DETAILS SECTION */
+#clientInfo {
+  grid-area: client_info;
+  padding-left: 1em;
+  display: grid;
+  grid-template-areas: "primaryClient . jointClient";
+  grid-template-columns: 1fr 2px 1fr;
+  grid-column-gap: 1em;
+  grid-row-gap: 1em;
+
+  h3, .fa-pencil-alt {
+    display: inline;
+  }
+
+  .fa-pencil-alt {
+    margin-left: 0.5em;
+  }
+}
+
+.clientInfoDetails {
+  display: flex;
+  flex-direction: column;
+
+  div {
+    margin-top: 0.5em;
+  }
+
+  i {
+    cursor: pointer;
+  }
+
+  span {
+    text-decoration: underline;
+  }
+}
+
+#primaryClientInfo {
+
+}
+
+#jointClientInfo {
+
+}
+
+.householdMemberName {
+  color: #BF4E6A;
+  margin-bottom: 0;
+}
+
+.edit-client {
+  font-size: 0.675rem;
+}
+
+#meetingsArea {
+  grid-area: profile_list;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  a.dropdown-item {
+    cursor: pointer;
+    width: 8em;
+  }
+
+  .versionSelection .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    z-index: 1;
+
+    top: -5px;
+    left: 125%;
+
+    transition-delay: 0s;
+  }
+
+  .versionSelection:hover .tooltiptext {
+    visibility: visible;
+    transition-delay: 1s;
+  }
+}
+
+hr {
+  margin: 0;
+}
+
+/** EXTRACT TO VERTICAL TAB */
+
+.vertical-tab-panel {
+  display: flex;
+  background-color: white;
+}
+
+.vertical-tab-panel .tabs {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-bottom: 0;
+  border-right: 1px solid #dee2e6;
+  width: 4em;
+}
+
+.vertical-tab-panel .tabs .tab-link {
+  border: 1px solid transparent;
+  display: block;
+  padding: .5rem 1rem;
+  color: #343434;
+  text-decoration: none;
+  background-color: transparent;
+  margin-right: -1px;
+  margin-left: -1px;
+}
+
+.vertical-tab-panel .tab-link.active {
+  border-color: #dee2e6 #fff #dee2e6 #dee2e6;
+
+}
+
+.vertical-tab-panel .tab-content {
+  /*display: none;*/
+  flex: 1;
+}
+
+.vertical-tab-panel .tab-content.active {
+  display: block;
+}
+
+.nav-tabs {
+  grid-area: tab_controls;
+  cursor: pointer;
+}
+
+.nav-tabs-body {
+  grid-area: tab_body;
+}

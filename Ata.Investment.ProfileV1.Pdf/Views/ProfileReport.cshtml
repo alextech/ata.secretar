@@ -1,0 +1,797 @@
+@using System.Data
+@using System.Globalization
+@using System.IO
+@using SharedKernel
+@using Ata.Investment.Profile.Domain.Points
+@using Ata.Investment.Profile.Domain.Profile
+@model Ata.Investment.ProfileV1.Pdf.Views.ProfileReportViewModel
+
+@{
+    Profile p = Model.Profile;
+    CultureInfo culture = new CultureInfo("en-US");
+}
+
+<html lang="en">
+<head>
+    @* TODO Move to own CDN *@
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.5.4/c3.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.5.4/c3.js"></script>
+
+    <style>
+        @@media print {
+            @@page {
+                size: A4;
+                margin: 0;
+                padding: 0;
+            }
+
+            .headerImage {
+                width: 100%;
+            }
+
+            .pageBreak {
+                page-break-after: always;
+            }
+        }
+
+        body {
+            margin: 0;
+            font-family: "Open Sans",sans-serif;
+            font-size: 12pt;
+        }
+
+        h1 {
+            color: #F1B51C;
+            font-family: opensanscondb, sans-serif;
+            font-size: 18pt;
+        }
+
+        li {
+            margin: 0 0 0.5rem 2rem;
+        }
+
+        section {
+            margin: 3rem 3rem 0 3rem;
+        }
+
+        /* === PAGE_1 === */
+
+        #page1 {
+            font-size: 20pt;
+        }
+
+        #date {
+            font-weight: bold;
+            font-size: x-large;
+
+            margin-bottom: 3rem;
+        }
+
+        #preparedFor {
+            float: left;
+        }
+
+        #preparedBy {
+            float: right;
+            text-align: right;
+        }
+    </style>
+
+    <style>
+        table {
+            border-collapse: collapse!important;
+        }
+
+        thead tr {
+            vertical-align:top;
+            border-top:1px solid #ddd;
+        }
+
+        th {
+            top: 0;
+            background-color: #F1B51C;
+            padding: .4rem;
+        }
+
+        td, th {
+            /*width: 1px;*/
+            border: 1px solid #7E7F73;
+        }
+
+        #decisionTable tbody>tr:nth-child(even){background-color:rgba(126, 127, 115, .05);}
+        #decisionTable tbody>tr:nth-child(odd){background-color:#fff;}
+
+        tbody a {
+            padding: 0.4em;
+        }
+
+        .selectedColumnHeading {
+          border-left: 2px solid #D43825;
+          border-top: 2px solid #D43825;
+          border-right: 2px solid #D43825;
+
+        }
+
+        .selectedColumnCell {
+          border-left: 2px solid #D43825;
+          border-right: 2px solid #D43825;
+        }
+
+        .selectedColumnCell.lastRow {
+          border-left: 2px solid #D43825;
+          border-right: 2px solid #D43825;
+          border-bottom: 2px solid #D43825;
+        }
+
+        .selectedCell {
+          background-color: black
+        }
+
+        th {
+          text-align: center;
+          vertical-align: top;
+        }
+
+        thead th:first-child {
+          width: 12em;
+        }
+
+        thead th:not(:first-child) {
+          width: 7em;
+        }
+    </style>
+    <style>
+        #resultChartArea {
+            display: flex;
+            justify-content: center;
+            margin: 0 0 2em 22em;
+        }
+
+        #resultChartNodeParent {
+            height: 14em;
+            width: 10em;
+        }
+
+        #resultChartNode {
+            text-align: center;
+        }
+
+        #resultChartArea table {
+            margin-top: 2em;
+        }
+
+        table.legend, table.legend tr, table.legend td {
+            border: none;
+        }
+
+        table.legend td {
+            padding-right: 0.5em;
+        }
+    </style>
+
+    <style>
+        #lossVsGainProfileChartNodeParent {
+            height: 10em;
+            width: 25em;
+
+            margin: 0 auto;
+            padding-bottom: 9em;
+        }
+
+        #hypotheticalProfileChartNodeParent {
+            height: 10em;
+            width: 25em;
+
+            margin: 0 auto;
+        }
+
+        .chartLabel {
+            text-align: center;
+            margin-top: -1em;
+        }
+    </style>
+
+    <style>
+        .signatureArea {
+            margin-top: 5em;
+
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+
+<body>
+
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-1-cover.jpg.txt"))" class="headerImage" alt=""/>
+
+<section id="page1">
+    <div id="date">@Model.Date.ToString("MMMM dd, yyyy", culture)</div>
+    <div id="preparedFor">
+        <div>
+            <b>PREPARED FOR:</b> <br/>
+            @Model.PreparedFor
+        </div>
+    </div>
+
+    <div id="preparedBy">
+        <b>PREPARED BY:</b> <br/>
+        @Model.Advisor.Name<br/>
+        @Model.Advisor.Credentials<br/>
+        @Model.Advisor.Email<br/>
+    </div>
+</section>
+
+<div class="pageBreak"></div>
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-2-header.jpg.txt"))" class="headerImage" alt=""/>
+<section id="page2">
+    <h1>Your Investment Policy Statement</h1>
+    <p>Your Investment Policy Statement (IPS) is a key component of your personal
+        investment strategy. The purpose of your IPS is to set forth in writing:</p>
+
+    <ol>
+        <li>An appropriate set of objectives and goals to be attained through the
+            investment of your portfolio's assets.
+        </li>
+        <li>The boundaries for your portfolio's asset allocation and investment
+            guidelines.
+        </li>
+        <li>A comprehensive analysis with understanding of the Management Solution
+            program, and customized portfolio you and I, as your investment advisor,
+            have chosen to best meet your investment objectives.
+        </li>
+    </ol>
+
+    <p>We will refer to this IPS as your investment grows and evolves. I will use the
+        criteria listed here
+        to ensure that your selected portfolio continues to meet your requirements.
+        If your circumstances or goals
+        change, your IPS can be updated to reflect these new requirements and
+        changes to your portfolio.</p>
+
+    <h1>Your Investor Profile for @p.Name</h1>
+
+    <p>Based on the responses to the questions I asked during our meeting,
+        and using Management Solution Questionnaire as a reference, I was able to
+        determine
+        your Investor Profile, which is the basis for your customized investment
+        strategy.</p>
+
+    <b>Overview</b><br/>
+    The following is a summary of your investor profile based on the information you provided:
+
+    <ul>
+        @* Personal finances section *@
+        <li>Your annual household income (before tax)
+            is @(Convert.ToDouble(p.AnnualIncome.Amount).ToString("C", culture)), which is @Model.IncomeStability.
+        </li>
+        <li>Your household's net worth
+            is @(Convert.ToDouble(p.NetWorth.Total).ToString("C", culture))
+        </li>
+        <li>
+            You have @Model.Situation.
+        </li>
+        <li>You plan to remain invested in this portfolio for at least @ProfilePoints.RoundTimeHorizon(p.TimeHorizon.WithdrawTime)
+            years, before you begin withdrawing a substantial portion of the
+            portfolio.
+        </li>
+        <li>You could tolerate a temporary decline in your portfolio over a one-year
+            period of @Model.OneYearDeclineAmount.
+        </li>
+        <li>You have @(Model.Knowledge) investment knowledge.</li>
+    </ul>
+</section>
+
+<div class="pageBreak"></div>
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-3-header.jpg.txt"))" class="headerImage" alt=""/>
+<section id="page_3">
+    <p></p>
+
+    <ul>
+        @* Profile expectations section *@
+        <li>You expect to withdraw a significant portion (1/3 or more) of the money in your investment portfolio
+            after at least <b>@ProfilePoints.RoundTimeHorizon(Model.Profile.TimeHorizon.WithdrawTime) years</b>.
+        </li>
+        <li>Your primary goal for this portfolio is @Html.Raw(Model.Goal)</li>
+        <li>Your investment account represents <b>@Model.PercentageOfSavings</b> of your total savings and investments. Total savings and investments include all the money you have in cash savings, GICs, savings bonds, mutual funds, stocks and bonds.</li>
+        <li>In making financial and investment decisions you are @Html.Raw(Model.DecisionMaking)</li>
+        <li>Given an investment of $10,000, within a 12 month period you could tolerate @Html.Raw(Model.Decline)</li>
+        <li>When you are faced with a major financial decision, you are @Html.Raw(Model.LossesOrGains)</li>
+        <li>If you owned an investment betwen September 2008 and November 2008, which lost over 30% in 3 months, you would @Html.Raw(Model.ActionOnLosses)</li>
+        <li>You are likely to invest into highlighted portfolio based on how much losses you are comfortable </li>
+        <li>This illustrates hypothetical profile you feel most comfortable holding, in comparison to other profiles in terms of how much of a loss you are willing to accept versus gain:</li>
+    </ul>
+
+    <div id="lossVsGainProfileChartNodeParent">
+        <div id="lossVsGainProfileChartNode"></div>
+        <div class="chartLabel">Hypothetical calendar year volatility</div>
+    </div>
+
+    <div id="hypotheticalProfileChartNodeParent">
+        <div id="hypotheticalProfileChartNode"></div>
+        <div class="chartLabel">Hypothetical longterm volatility</div>
+    </div>
+
+</section>
+
+<div class="pageBreak"></div>
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-4-header.jpg.txt"))" class="headerImage" alt=""/>
+<section id="page4">
+    <h1>Assessing Your Investor Profile</h1>
+    <p>The information you have provided me is instrumental in creating an investment
+        strategy that best meets your needs. Defining your investment objectives, establishing
+        your risk tolerance and understanding your investment time horizon are key
+        components in developing an effective investment strategy best suited you.
+    </p>
+
+    <h1>Your Primary Investment Objective</h1>
+    <p>Your investment objective is determined to be aimed towards
+        @{
+            if (Model.SuggestedObjectives.AggressiveGrowth == 100)
+            {
+                <span><b>aggressive growth</b>, where maximum capital appreciation and current income from investments is not a requirement. This may lead the client to hold a relatively high proportion of funds that invest in companies that demonstrate a high growth potential and higher likelihood of increased market value volatility in the fund price (both positive and negative).</span>;
+            }
+            else if (Model.SuggestedObjectives.Growth == 100)
+            {
+                <span><b>growth</b>, where capital appreciation and current income from investments is not a requirement. This may lead the client to hold a relatively high proportion of funds that invest in equities if the client also has a higher risk tolerance and long term time horizon.</span>
+            }
+            else if (Model.SuggestedObjectives.Balanced == 100)
+            {
+                <span>a <b>combination of income and growth</b>. An account with a balanced objective should typically include at least 40% in fixed income investments and no more than 60% in equity mutual funds.</span>
+            }
+            else if (Model.SuggestedObjectives.Income == 100)
+            {
+                <span>to <b>generate current income</b> from their investments and they are less concerned with capital appreciation. Investments that will satisfy this objective include fixed income investments such as funds that invest in bond or money market instruments.</span>
+            }
+            else if (Model.SuggestedObjectives.CashReserve == 100)
+            {
+                <span><b>short-term, highly liquid investment</b> that earns a low rate of return. Capital preservation is critical.</span>
+            }
+        }
+    </p>
+    <p>Generally, there is a correlation between portfolio returns and the amount of portfolio
+        risk you are prepared to assume. Portfolios emphasizing long-term growth tend to
+        experience high price fluctuations over the short term. You will need to accept
+        higher portfolio risk if you wish to achieve higher returns.
+    </p>
+
+    <h1>Risk Tolerance</h1>
+    <p>Risk tolerance describes the degree of risk you are willing to assume to achieve
+        your investment objectives. Generally, higher potential returns carry a
+        correspondingly higher level of risk.
+    </p>
+
+    <p>Your risk tolerance is determined to be
+        @{
+            if (Model.SuggestedRiskTolerance.High == 100)
+            {
+                <span><b>High</b>. "High" risk investment demonsrates high volatility and are for investors who are growth oriented and are willing to accept significant short term fluctuations in portfolio value in exchange for potentially higher long term returns and funds that invest in specific market sectors or geographic areas such as emerging markets, science and technology, or funds that engage in speculative trading strategies including hedge funds that invest in derivatives, short sell or use leverage.</span>
+            }
+            else if (Model.SuggestedRiskTolerance.MediumHigh == 100)
+            {
+                <span><b>Medium High</b>. "Medium to High" risk investments demonstrate a medium to high volatility and are for investors that are looking for long term growth and may include funds that invest in smaller companies, specific market sectors or geographic areas.</span>
+            }
+            else if (Model.SuggestedRiskTolerance.Medium == 100)
+            {
+                <span><b>Medium</b>. "Medium risk" investments demonstrate a medium volatility and are for clients that are looking for moderate growth over a longer period of time and may include Canadian dividend, Canadian equity, U.S. equity and certain international equity funds.</span>
+            }
+            else if (Model.SuggestedRiskTolerance.LowMedium == 100)
+            {
+                <span><b>Low Medium</b>. "Low to Medium" risk investments demonstrate a low to medium volatility but a higher volatility than those described as low risk and may include bond or balanced funds.</span>
+            }
+            else if (Model.SuggestedRiskTolerance.Low == 100)
+            {
+                <span><b>Low</b>. "Low" risk investments demonstrate a low volatility and are for clients who are willing to accept lower returns for greater safety of capital and may include such investments as Canada Savings Bonds, GICs and money market mutual funds.</span>
+            }
+        }
+    </p>
+
+
+    <p>You can tolerate temporary decline in your portfolio
+        over a one-year period of <b>@Model.OneYearDeclineAmount</b>. Creating a diversified
+        portfolio solution through Managed Solutions will help achieve higher returns
+        while minimizing your level of risk.
+    </p>
+
+    <h1>Investment Time Horizon</h1>
+    <p>The longer your investment time horizon, the greater the likelihood that you will
+        achieve your investment objectives. You have identified your portfolio's investment
+        time horizon to be <b>@p.TimeHorizon years</b>.
+    </p>
+
+    <p>When it comes to investing, time is definitely an asset. Staying true to your investment
+        strategy through all market conditions is critical to achieve your goals,
+        especially during time of market volatility. In particular, a long-term strategy
+        is best for equities, since they can fluctuate significantly in the short term.
+        Investment losses can often be recouped over time, and you can take advantage of
+        market upswings to enhance portfolio returns. Very high and very low returns eventually
+        average out over time.
+    </p>
+</section>
+
+<div class="pageBreak"></div>
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-5-header.jpg.txt"))" class="headerImage" alt=""/>
+<section id="page5">
+    <h1>Why Use A Managed Solution?</h1>
+
+    <p><b>Your strategically constructed portfolio is designed to maximize returns for a given level of risk.</b><br/>
+        Strategic asset allocation is a long-term investment strategy that determines the best asset mix for your portfolio, with the
+        goal of earning the greatest possible rate of return at the given level of risk. It focuses on meeting your individual investment
+        objectives, as well as providing stable, consistent returns over the long term. As part of a managed solution program, the
+        portfolio managers, through their specialized institutional-style mandates, have the discretion and opportunities to add value
+        using day-to-day tactical actions through stock selection and sector allocation.
+    </p>
+
+
+    <p><b>Your portfolio invests in exclusive multi-manager, multi-style investment pools designed to outperform the markets.</b><br/>
+        The managed mandates were created specifically for our Managed Solution using a sophisticated process to establish
+        the most effective mix of styles and market sectors and the best fit of portfolio managers. These underlying pools are:
+    </p>
+    <ul>
+        <li>Multi-manager, which reduces dependency on a single manager, enhances performance consistency and minimizes forecast
+            risk.</li>
+        <li>Multi-style, for stable returns with growth opportunities.</li>
+        <li>Currency hedged on the international and U.S equity funds, which reduces volatility.</li>
+    </ul>
+    <p>
+        The portfolio managers of the pools in an asset allocation program have a significant impact on results. It is the strength of
+        our award-winning portfolio managers that gives a Managed Solution a clear advantage over other asset allocation programs.
+    </p>
+
+    <p><b>Unprecedented ability to customize your portfolio</b><br/>
+        Your Manged Solution goes beyond other strategic asset allocation programs by allowing you to customize the recommended
+        portfolio:
+    </p>
+    <ul>
+        <li>To emphasize a defined equity management style (Style Review)</li>
+        <li>To expand asset diversification beyond the recommended portfolio (Active Strategy)</li>
+        <li>To take advantage of new market trends not fully incorporated into the recommended solution <br/>(Active Strategy)</li>
+    </ul>
+    <p><b>True tax efficiency</b><br/>
+        Your Manged Solution is built on a Corporate Class platform, which allows you to rebalance between funds without triggering
+        a taxable event. (You do not incur capital gains until you redeem from the program.) Such tax deferral leads to increased
+        compound growth over the long term. Furthermore, highly taxed interest income is turned into tax-advantaged capital gains,
+        whenever possible. The Corporate Class structure minimizes or eliminates annual taxable distributions.
+    </p>
+
+    <p><b>Ease of monitoring</b><br/>
+        Your Manged Solution provides detailed quarterly reports with personalized portfolio performance, making tracking and
+        record-keeping easy.
+    </p>
+</section>
+
+<div class="pageBreak"></div>
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-6-header.jpg.txt"))" class="headerImage" alt=""/>
+<section id="page6">
+    <h1>Your Portfolio</h1>
+    <p>Your responses to the Managed Solution Questionnaire have created a portfolio composition recommendation that
+        addresses your long-term goals and meets your risk tolerance. It is built on
+        the principles of modern portfolio theory. The result is a set of portfolios that are consistent with historical performance,
+        reflect today’s economic environment and are expected to generate superior risk-adjusted returns.
+    </p>
+
+    <div id="resultChartArea">
+        <div id="resultChartNodeParent">
+            <div id="resultChartNode"></div>
+        </div>
+
+        <table class="legend">
+            @foreach (CompositionVM composition in @Model.RecommendedOption.Composition)
+            {
+                <tr>
+                    <td><div style="width: 2em; height: 0.8em; background-color: @composition.Color">&nbsp;</div></td>
+                    <td style="width: 4em;">@composition.Portfolio</td>
+                    <td style="width: 0.2em;">:</td>
+                    <td>@composition.Percent%</td>
+                </tr>
+            }
+        </table>
+    </div>
+
+    <table id="decisionTable">
+            <thead>
+            <th></th>
+            <th class="@(Model.RiskColumnIdx == 0 ? "selectedColumnHeading" : "")"><span>1</span><br /><span>Safety</span></th>
+            <th class="@(Model.RiskColumnIdx == 1 ? "selectedColumnHeading" : "")"><span>2</span><br /><span>Conservative Income</span></th>
+            <th class="@(Model.RiskColumnIdx == 2 ? "selectedColumnHeading" : "")"><span>3</span><br /><span>Balanced</span></th>
+            <th class="@(Model.RiskColumnIdx == 3 ? "selectedColumnHeading" : "")"><span>4</span><br /><span>Growth</span></th>
+            <th class="@(Model.RiskColumnIdx == 4 ? "selectedColumnHeading" : "")"><span>5</span><br /><span>Aggressive Growth</span></th>
+            </thead>
+            <tbody>
+            <tr>
+                <th>Time Horizon</th>
+                @{
+                    DataRow row = Model.PivotView.Rows[0];
+                    @for (int i = 0; i < 5; i++)
+                    {
+
+                        <td class="@(Model.RiskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                    }
+                }
+            </tr>
+            <tr>
+                <th>Investment Knowledge</th>
+                @{
+                    row = Model.PivotView.Rows[1];
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <td class="@(Model.RiskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                    }
+                }
+            </tr>
+            <tr>
+                <th>Investment Objectives</th>
+                @{
+                    row = Model.PivotView.Rows[2];
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <td class="@(Model.RiskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                    }
+                }
+            </tr>
+            <tr>
+                <th>Risk Capacity</th>
+                @{
+                    row = Model.PivotView.Rows[3];
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <td class="@(Model.RiskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "")">&nbsp;</td>
+                    }
+                }
+            </tr>
+            <tr>
+                <th>Risk Attitude</th>
+                @{
+                    row = Model.PivotView.Rows[4];
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <td class="@(Model.RiskColumnIdx == i ? "selectedColumnCell" : "") @((bool)row[i] ? "selectedCell" : "") lastRow">&nbsp;</td>
+                    }
+                }
+            </tr>
+            </tbody>
+        </table>
+
+    <br/><br/>
+    <p>The Managed Solution program is built on a structure called Corporate Class, which increases the tax efficiency of your
+        portfolio. Most of your total returns will be tax-deferred until you redeem your investment.
+    </p>
+
+    <p>Staying on track through all market conditions is critical to achieving your goals, especially in times of market volatility.
+        Market timing is not a reliable strategy. In fact, it can do more harm than good. Your portfolio’s asset mix should only
+        change based on changes to your time horizon and objectives. During more difficult times in the capital markets, you may
+        find it reassuring to consult with me to review your portfolio and ensure it is still positioned to meet your longer-term goal.
+    </p>
+</section>
+
+<div class="pageBreak"></div>
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-7-header.jpg.txt"))" class="headerImage" alt=""/>
+<section id="page7">
+    <h1>Monitoring Procedures</h1>
+
+    <p>This section details our plan for keeping your investment strategy on track.
+        We will refer to this IPS frequently as your
+        investments grow and evolve. I will use the criteria listed here to ensure
+        that your selected portfolio continues to meet your
+        requirements.</p>
+
+    <p>A written plan helps you maintain a disciplined approach, thereby increasing
+        the probability of achieving your financial
+        goals.</p>
+
+    <p><b>Recommended portfolios’ asset mix review</b><br/>
+        The Managed Solution monitors the portfolios on a regular basis. Over time,
+        the risk-reward relationship among a portfolio’s
+        components may shift and its target mix may need to be adjusted to maintain
+        its expected efficiency.</p>
+
+    <p><b>Investment managers’ monitoring</b><br/>
+        The Managed Solution will consistently monitor investment managers included
+        in the The Managed Solution portfolios to
+        ensure they adhere to the investment discipline they were hired for and to
+        ensure that the portfolios are invested as expected.</p>
+
+    <p><b>Quarterly, personalized account reports</b><br/>
+        On a quarterly basis, you will receive a Statement. This document outlines
+        the transactions that have taken place within your
+        account, including purchases, withdrawals, portfolio rebalancing and your
+        portfolio’s current value, personalized rate of return
+        at the account level along with a market commentary discussing strategy and
+        outlook.</p>
+
+    <p><b>Liquidity needs</b><br/>
+        The key to achieving your financial goals is to “stay the course” and remain
+        fully invested. Unscheduled withdrawals work
+        against your investment plan and are not recommended. However, you can
+        redeem units at any time by notifying me of
+        your requirement. We will work to find a solution to meet your cash
+        requirements while continuing to adhere to your
+        investment plan.</p>
+
+    <p>
+        <b>Your IPS is a key component of your personal investment strategy. Keeping
+            me appraised of significant changes
+            in your circumstances or goals will help ensure that we re-evaluate and
+            adjust your strategy accordingly.</b></p>
+</section>
+
+<div class="pageBreak"></div>
+<img src="@(File.ReadAllText(Model.AssetsDirectory + "/page-8-header.jpg.txt"))" class="headerImage" alt=""/>
+<section id="page8">
+    <h1>Acceptance of IPS</h1>
+    <p>Please review the entire package and inform me of any misstatement so that I
+        can submit a revised IPS to you. Your
+        Managed Solution simplified prospectus provides additional essential details
+        on your portfolio and I recommend you read
+        it and let me know of any questions you may have.</p>
+
+    <p><b>Acknowledgement</b><br/>
+        It is important you acknowledge:</p>
+    <ul>
+        <li>Your investment objectives are accurately reflected in this Investment
+            Policy Statement.
+        </li>
+        <li>The selected portfolio matches your investment objectives.</li>
+        <li>If there is any change to your financial situation and/or investment
+            objectives.
+        </li>
+        <li>There is no guarantee of investment returns and that returns will
+            fluctuate over time.
+        </li>
+    </ul>
+    <br/>
+    <p><b>What is left for you to do?</b></p>
+    <ol>
+        <li>Retain this copy of your Investment Policy Statement for reference and
+            periodic review.
+        </li>
+        <li>Complete the enclosed application form with me.</li>
+        <li>Invest <u>@(Convert.ToDouble(p.InitialInvestment).ToString("C", culture)) </u> in the customized portfolio of investments
+            stated in this IPS.
+        </li>
+        <li>Contribute <u>@(Convert.ToDouble(p.MonthlyCommitment).ToString("C", culture)) </u> on a monthly basis to the portfolio as a
+            means of meeting your long-term financial goals
+            and objectives.
+        </li>
+    </ol>
+    <p>I wish to implement the Manged Solution program with the selected asset classes and portfolio managers outlined in
+        this IPS. I understand that returns are not guaranteed, and will fluctuate over time. I agree to keep my financial advisor
+        informed of any changes to my financial status for the entire investment period.</p>
+
+    <div class="signatureArea">
+        <div class="signature">Client signature: _________________</div>
+    </div>
+</section>
+
+<script type="text/javascript">
+
+c3.generate({
+        bindto: document.getElementById('resultChartNode'),
+        data: {
+            columns: [
+            @foreach (CompositionVM composition in @Model.RecommendedOption.Composition)
+            {
+                <text>
+                    ['@composition.Portfolio', @composition.Percent],
+                </text>
+            }
+            ],
+            colors: {
+                @foreach (CompositionVM composition in @Model.RecommendedOption.Composition)
+                {
+                    <text>
+                        @composition.Portfolio: '@composition.Color',
+                    </text>
+                }
+            },
+            type : 'pie',
+        },
+        pie: { label: { show: false } },
+        legend: {
+            show: false
+        }
+    });
+
+c3.generate({
+    bindto: document.getElementById('hypotheticalProfileChartNode'),
+    data: {
+        columns: [
+            ['high', 0.2,0.50,1.75,2.75,3.75,5.00,5.00,4.00,3.00,2.00,3.00,3.00,4.00,5.00,5.50,5.00,-0.50,-7.00,0.00,4.25,5.50,6.00,7.00,8.00,8.00,8.00,5.00,2.00,-3.00,-4.00,-11.00,-11.00,-4.00,-3.00,1.00,2.00,3.00,5.00,6.00,5.00,5.00,6.00,6.00,7.00,8.00,9.00,10.00,12.00,11.00,12.00,12.00,11.00],
+            ['mediumHigh', 0.2,1.00,1.50,2.00,3.00,3.00,3.25,3.00,4.00,4.50,4.25,2.50,4.00,5.00,3.00,2.50,3.00,-3.00,3.50,5.00,5.25,5.50,5.50,5.75,6.00,5.50,5.00,3.00,1.75,-1.00,-2.00,-2.00,-1.50,-1.00,0.00,1.00,2.00,3.00,3.00,2.00,3.00,4.00,5.00,6.00,8.00,8.00,8.50,9.00,9.00,8.50,8.80,8.40],
+            ['medium', 0.2,0.75,1.25,1.30,1.40,1.50,2.00,1.70,2.00,2.00,2.20,2.20,2.30,2.20,2.10,2.20,1.00,1.00,1.00,1.75,3.00,3.30,3.40,3.50,3.60,3.70,3.80,3.00,1.50,1.00,0.00,-0.50,-0.50,0.00,1.00,1.00,1.50,2.50,4.00,4.50,5.00,5.00,4.50,4.00,4.50,4.60,4.70,4.90,5.00,4.70,4.80,5.00],
+            ['low', 0.2,0.03921,0.07842,0.11763,0.15684,0.19605,0.23526,0.27447,0.31368,0.35289,0.3921,0.43131,0.47052,0.50973,0.54894,0.58815,0.62736,0.66657,0.70578,0.74499,0.7842,0.82341,0.86262,0.90183,0.94104,0.98025,1.01946,1.05867,1.09788,1.13709,1.1763,1.21551,1.25472,1.29393,1.33314,1.37235,1.41156,1.45077,1.48998,1.52919,1.5684,1.60761,1.64682,1.68603,1.72524,1.76445,1.80366,1.84287,1.88208,1.92129,1.9605,2]
+        ],
+        types: {
+            @{
+                <text>
+                    high: '@(Model.Profile.HypotheticalProfile == 10 ? "area" : "line")',
+                    mediumHigh: '@(Model.Profile.HypotheticalProfile == 6 ? "area" : "line")',
+                    medium: '@(Model.Profile.HypotheticalProfile == 4 ? "area" : "line")',
+                    low: '@(Model.Profile.HypotheticalProfile == 0 ? "area" : "line")',
+                </text>
+            }
+        },
+        colors: {
+            @{
+                <text>
+                    high: d3.rgb(212, 56, 37, @(Model.Profile.HypotheticalProfile == 10 ? "1" : "0.3")),
+                    mediumHigh: d3.rgb(241, 181, 28, @(Model.Profile.HypotheticalProfile == 6 ? "1" : "0.3")),
+                    medium: d3.rgb(0, 159, 200, @(Model.Profile.HypotheticalProfile == 3 ? "1" : "0.3")),
+                    low: d3.rgb(153, 176, 53, @(Model.Profile.HypotheticalProfile == 0 ? "1" : "0.3"))
+                </text>
+            }
+        }
+    },
+    axis: {
+            x: {show:false},
+            y: {show:false}
+        },
+    point: {
+        show: false
+    },
+    legend: {
+        show: false
+    }
+});
+
+@{
+    int barIndex = Model.Profile.LossVsGainProfile switch {
+        0 => 0,
+        3 => 1,
+        6 => 2,
+        10 => 3,
+        _ => 0
+        };
+}
+
+c3.generate({
+    bindto: document.getElementById('lossVsGainProfileChartNode'),
+    data: {
+        columns: [
+            ['gains', 200, 500, 1200, 2500],
+            ['losses', 0, -200, -800, -2000],
+        ],
+        type: 'bar',
+        groups: [
+            ['gains', 'losses']
+        ],
+        color : function (color, d) {
+            @{
+            <text>
+                var selectedIndex = @barIndex;
+            </text>
+            }
+
+            const opacity = d.hasOwnProperty("index") && d.index === selectedIndex ? 1 : 0.3;
+            var color;
+
+            color = d.id === "gains" ? d3.rgb(153, 176, 53, opacity) : d3.rgb(212, 56, 37, opacity);
+
+            return color;
+        }
+    },
+    grid: {
+        y: {
+            lines: [{value:0}]
+        }
+    },
+    axis: {
+            x: {show:false},
+            y: {show:false}
+        },
+    point: {
+        show: false
+    },
+    legend: {
+        show: false
+    }
+});
+
+
+
+
+</script>
+</body>
+</html>

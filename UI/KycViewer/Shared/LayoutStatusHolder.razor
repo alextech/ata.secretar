@@ -1,0 +1,13 @@
+<div class="status">@_status</div>
+
+@code {
+
+    private string _status;
+
+    public void SetStatus(string status)
+    {
+        _status = status;
+        StateHasChanged();
+    }
+
+}

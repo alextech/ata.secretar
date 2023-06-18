@@ -1,0 +1,107 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+    <LangVersion>10</LangVersion>
+    <UserSecretsId>9fc6f61a-77cf-4b73-bb10-7acc7e34ee57</UserSecretsId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="8.1.1" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.16.0" />
+    <PackageReference Include="MediatR" Version="9.0.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.SnapshotCollector" Version="1.3.7.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="6.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.6.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="6.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.ReDoc" Version="5.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BC_Schedule\Ata.Investment.Schedule.Application\Ata.Investment.Schedule.Application.csproj" />
+    <ProjectReference Include="..\Profile\Ata.Investment.Profile.Cmd\Ata.Investment.Profile.Cmd.csproj" />
+    <ProjectReference Include="..\Ata.Investment.Allocation.Application\Ata.Investment.Allocation.Application.csproj" />
+    <ProjectReference Include="..\Ata.Investment.Allocation.Data\Ata.Investment.Allocation.Data.csproj" />
+    <ProjectReference Include="..\Ata.Investment.Profile.Application\Ata.Investment.Profile.Application.csproj" />
+    <ProjectReference Include="..\Ata.Investment.Profile.Data\Ata.Investment.Profile.Data.csproj" />
+    <ProjectReference Include="..\Ata.Investment.ProfileV1.Pdf\Ata.Investment.ProfileV1.Pdf.csproj" />
+    <ProjectReference Include="..\UI\KycViewer.App\KycViewer.App.csproj" />
+<!--    <ProjectReference Include="..\UI\AllocationsEditor\AllocationsEditor.csproj" />-->
+<!--    <ProjectReference Include="..\UI\KycViewer\KycViewer.csproj" />-->
+<!--    <ProjectReference Include="..\UI\Ata.Investment.ClientsList\Ata.Investment.ClientsList.csproj" />-->
+    <ProjectReference Include="..\Web\Ata.Investment.AuthCore\Ata.Investment.AuthCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\dist\**" />
+    <Content Remove="obj\**" />
+    <Content Remove="Pages\Allocations.cshtml" />
+    <Content Remove="Questionnaire\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="wwwroot\dist\**" />
+    <Compile Remove="obj\**" />
+    <Compile Remove="Pages\Allocations.cshtml.cs" />
+    <Compile Remove="Questionnaire\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="wwwroot\dist\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <EmbeddedResource Remove="Questionnaire\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="wwwroot\dist\**" />
+    <None Remove="obj\**" />
+    <None Remove="Questionnaire\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\dist\**" />
+    <_ContentIncludedByDefault Remove="Hal\AllocationRecommendationSchema.json" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Components\Navigation\ClientMenu.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Components\Navigation\Navigation.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Components\Navigation\ProfileMenu.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Components\NewProfileModal.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Pages\Expectations.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Pages\FinancialState.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Pages\MeetingPage.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Pages\Objectives.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Pages\Results.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Pages\_Imports.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Questionnaire\Shared\QuestionnaireLayout.razor" />
+    <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Account\Logout.cshtml" />
+    <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Account\_ViewImports.cshtml" />
+    <_ContentIncludedByDefault Remove="Areas\Identity\Pages\_ValidationScriptsPartial.cshtml" />
+    <_ContentIncludedByDefault Remove="Areas\Identity\Pages\_ViewImports.cshtml" />
+    <_ContentIncludedByDefault Remove="Areas\Identity\Pages\_ViewStart.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Shared\_Layout.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Shared\_LoginPartial.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Shared\_ValidationScriptsPartial.cshtml" />
+    <_ContentIncludedByDefault Remove="Questionnaire\src\api\db.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- extends watching group to include *.js files -->
+    <Watch Include="..\Ata.Investment.ProfileV1.Pdf\Views\*.cshtml" />
+  </ItemGroup>
+  
+</Project>

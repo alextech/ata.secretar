@@ -1,0 +1,24 @@
+{
+  "name": "admin-ete-test",
+  "version": "0.9.0",
+  "description": "End to End testing of administration side of TSG Investment",
+  "author": {
+    "name": "Alexander Romanenko for TSG"
+  },
+  "license": "Commercial",
+  "repository": {
+    "type": "git",
+    "url": "https://alex-tech@dev.azure.com/alex-tech/TSG_Questionnair/_git/Ata.Investment"
+  },
+  "jest": {
+    "preset": "jest-puppeteer"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "jest": "^24.8.0",
+    "jest-puppeteer": "^4.3.0",
+    "puppeteer": "^1.18.1"
+  }
+}

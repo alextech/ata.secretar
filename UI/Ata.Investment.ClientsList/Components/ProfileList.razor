@@ -1,0 +1,151 @@
+@using System.Globalization
+@using MediatR
+@using Microsoft.JSInterop
+@using Ata.Investment.ClientsList.ViewModels
+@using Ata.Investment.Profile.Cmd
+@using Ata.Investment.Profile.Cmd.Profile
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.Household
+@using Ata.Investment.Profile.Domain.KYC
+
+@inject IMediator MediatR
+@inject IJSRuntime JSRuntime;
+
+<section id="profileList" class="vertical-tab-panel">
+    <div class="tabs">
+        <a href="@BaseUrl/profiles" class="tab-link @(Year == 0 ? "active" : "")">All</a>
+        @if (_isListLoaded)
+        {
+            @foreach (int year in _years ?? Enumerable.Empty<int>())
+            {
+                <a href="@BaseUrl/profiles/@year" class="tab-link @(year == Year ? "active" : "")">@year</a>
+            }
+        }
+    </div>
+
+
+    <div class="tab-content">
+        <table>
+            <thead>
+            <tr>
+                <th></th>
+                <th>Profile</th>
+                <th>Created for</th>
+                <th style="width: 9.5em">Date</th>
+                <th style="width: 3em">Status</th>
+                <th style="width: 5em">Allocation Version</th>
+            </tr>
+            </thead>
+            @if (_isListLoaded)
+            {
+                <tbody>
+                @foreach (Meeting meeting in _meetings ?? Enumerable.Empty<Meeting>())
+                {
+                    bool isSelected = meeting.Guid == _lastMeetingId;
+
+                    if (Year == 0 || meeting.Date.Year == Year)
+                    {
+                        <tr @onclick="@(() => RowSelectionHandler(meeting.Guid, meeting.IsCompleted))" class="@(isSelected ? "selected" : "")">
+                            <td><input type="checkbox" checked="@isSelected"/></td>
+                            <td><a>@meeting.Purpose &nbsp;</a></td>
+                            <td><a>@meeting.CreatedFor</a></td>
+                            <td><a>@meeting.Date.ToString("MMMM dd, yyyy", new CultureInfo("en-US"))</a></td>
+                            <td class="status-column">
+                                <a title="@(meeting.IsCompleted ? "completed" : "draft")">
+                                    @if (meeting.IsCompleted)
+                                    {
+                                        <span style="color: #28a745"><i class="fas fa-clipboard-check"></i></span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #1879C3"><i class="fas fa-pencil-ruler"></i></span>
+                                    }
+                                </a>
+                            </td>
+                            <td><a>@meeting.AllocationVersion</a></td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            }
+        </table>
+        @if (!_isListLoaded)
+        {
+            <img src="@(CommonPaths.LoadingGif)" style="align-self: center; margin-left: 41%" alt="loading"/>
+        }
+    </div>
+</section>
+
+@code {
+
+    private IEnumerable<Meeting> _meetings;
+
+    private IEnumerable<int> _years;
+
+    [Parameter]
+    public Household Household { get; set; }
+
+    [Parameter]
+    public int Year { get; set; }
+
+    [Parameter]
+    public string BaseUrl { get; set; }
+
+    [Parameter]
+    public EventCallback<MeetingSelectionVM> OnMeetingSelectionChanged { get; set; }
+
+    private Guid _selectedMeetingId = Guid.Empty;
+
+    private Guid _lastMeetingId;
+
+    private bool _isListLoaded;
+
+    private Guid _lastHouseholdId;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Household.Guid == _lastHouseholdId)
+        {
+            return;
+        }
+
+        _lastHouseholdId = Household.Guid;
+        _lastMeetingId = Guid.Empty;
+
+        _isListLoaded = false;
+        await FetchProfiles();
+        _isListLoaded = true;
+    }
+
+    private void RowSelectionHandler(Guid meetingId, bool isCompleted)
+    {
+        _lastMeetingId = meetingId;
+
+        OnMeetingSelectionChanged.InvokeAsync(new MeetingSelectionVM{MeetingGuid = meetingId, IsComplete = isCompleted});
+    }
+
+    private async Task FetchProfiles()
+    {
+        if (Household == null) return;
+
+        _meetings = await MediatR.Send(new MeetingsQuery(Household.Guid));
+        GroupYears();
+    }
+
+    private void GroupYears()
+    {
+        var years = from m in _meetings
+            group m by m.Date.Year
+            into y
+            select y.Key;
+
+        _years = years.ToList();
+    }
+
+    public async Task Refresh()
+    {
+        _isListLoaded = false;
+        await FetchProfiles();
+        _isListLoaded = true;
+        StateHasChanged();
+    }
+}

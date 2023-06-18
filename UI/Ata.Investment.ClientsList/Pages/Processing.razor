@@ -1,0 +1,49 @@
+﻿@page "/processing"
+@using Ata.Investment.Profile.Domain
+@using MediatR
+@using Ata.Investment.Schedule.Cmd
+
+@inject IMediator MediatR
+
+<section class="sub-nav">
+
+</section>
+
+<main id="processing">
+    @if (!_processingList.Any())
+    {
+        <p>All meetings processed!</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Date/Time</th>
+                <th>Meeting with</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (UnprocessedMeetingDTO meetingDTO in _processingList)
+            {
+                <tr>
+                    <td>@meetingDTO.DateTime.ToString("g")</td>
+                    <td>@meetingDTO.MeetingWith</td>
+                    <td><a href="@($"/meeting/{meetingDTO.MeetingGuid}/QuickView")" class="btn btn-primary">Data View</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</main>
+
+@code {
+
+    private IEnumerable<UnprocessedMeetingDTO> _processingList = new List<UnprocessedMeetingDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _processingList = await MediatR.Send(new UnprocessedMeetingsQuery());
+    }
+}

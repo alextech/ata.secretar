@@ -1,0 +1,181 @@
+@using MediatR
+@using Microsoft.JSInterop
+@using SharedKernel
+@using KycViewer.Components
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Points
+@using Ata.Investment.Profile.Domain.Profile
+@using System.Data
+@using Ata.Investment.Allocation.Cmd
+
+@inject IMediator MediatR
+@inject IJSRuntime JSRuntime;
+
+@if(_profile != null) {
+
+bool ro = Meeting.IsCompleted;
+
+    <section id="resultsView">
+        <ProfileNameEditor Profile="@_profile" ReadOnly="@ro" />
+
+        <ata-panel data-title="Recommendations" id="recommendationPanel">
+            <div class="recommendations" slot="body">
+                @if (_recommendations == null)
+                {
+                    <div class="loadingWrapper" style="height: 161px">
+                        <img src="@(CommonPaths.LoadingGif)" alt="loading"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="charts">
+                        @foreach (Recommendation recommendation in _recommendations)
+                        {
+                            <ata-allocation-chart option="Option id: @recommendation.AllocationOptionId" id="option_chart_@recommendation.AllocationOptionId" disabled="@ro"/>
+                        }
+                    </div>
+                }
+
+                <DecisionTableView DecisionTable="@_decisionTable"/>
+
+                <p>You expect to withdraw a significant portion (1/3 or more) of the money in your investment portfolio
+                    after at least @ProfilePoints.RoundTimeHorizon(_profile.TimeHorizon.WithdrawTime) years.</p>
+            </div>
+        </ata-panel>
+
+        @{
+            // ReSharper disable once SuggestVarOrType_SimpleTypes
+            var o = _decisionTable.SuggestedObjectives;
+        }
+        <ata-percentage-breakdown data-title="Account Investment Objective" name="profile_objectives">
+            <label for="aggGrowth" slot="label">Aggressive Growth:</label>
+            <ata-numeric type="percentage" value="@o.AggressiveGrowth" slot="input" readonly/>
+
+            <label for="growth" slot="label">Growth:</label>
+            <ata-numeric type="percentage" value="@o.Growth" slot="input" readonly/>
+
+            <label for="balanced" slot="label">Balanced:</label>
+            <ata-numeric type="percentage" value="@o.Balanced" slot="input" readonly/>
+
+            <label for="income" slot="label">Income:</label>
+            <ata-numeric type="percentage" value="@o.Income" slot="input" readonly/>
+
+            <label for="cashReserve" slot="label">Cash Reserve:</label>
+            <ata-numeric type="percentage" value="@o.CashReserve" slot="input" readonly/>
+
+            <div slot="tooltip">
+                <p><strong>Aggressive Growth</strong>: The client’s objective is maximum capital appreciation and current income from investments is not a requirement. This may lead the client to hold a relatively high proportion of funds that invest in companies that demonstrate a high growth potential and higher likelihood of increased market value volatility in the fund price (both positive and negative).</p>
+                <p><strong>Growth</strong>: The client’s objective is capital appreciation and current income from investments is not a requirement. This may lead the client to hold a relatively high proportion of funds that invest in equities if the client also has a higher risk tolerance and long term time horizon.</p>
+                <p><strong>Balanced</strong>: The client’s objective is a combination of income and growth. An account with a balanced objective should typically include at least 40% in fixed income investments and no more than 60% in equity mutual funds.</p>
+                <p><strong>Income</strong>: The client’s objective is to generate current income from their investments and they are less concerned with capital appreciation. Investments that will satisfy this objective include fixed income investments such as funds that invest in bond or money market instruments.</p>
+                <p><strong>Cash Reserves</strong>: The client’s objective is short-term, highly liquid investment that earns a low rate of return. Capital preservation is critical.</p>
+            </div>
+        </ata-percentage-breakdown>
+
+        @{
+            RiskTolerance r = _decisionTable.SuggestedRiskTolerance;
+        }
+        <ata-percentage-breakdown data-title="Account Risk Tolerance" name="profile_risk">
+            <label for="high" slot="label">High:</label>
+            <ata-numeric type="percentage" value="@r.High" slot="input" readonly/>
+
+            <label for="mediumHigh" slot="label">Medium to High:</label>
+            <ata-numeric type="percentage" value="@r.MediumHigh" slot="input" readonly/>
+
+            <label for="medium" slot="label">Medium:</label>
+            <ata-numeric type="percentage" value="@r.Medium" slot="input" readonly/>
+
+            <label for="lowMedium" slot="label">Low to Medium:</label>
+            <ata-numeric type="percentage" value="@r.LowMedium" slot="input" readonly/>
+
+            <label for="low" slot="label">Low:</label>
+            <ata-numeric type="percentage" value="@r.Low" slot="input" readonly/>
+
+            <div slot="tooltip" data-tooltip-placement="left">
+                <p><strong>High</strong>: "High" risk investments demonstrate a high volatility and are for investors who are growth oriented and are willing to accept significant short term fluctuations in portfolio value in exchange for potentially higher long term returns and funds that invest in specific market sectors or geographic areas such as emerging markets, science and technology, or funds that engage in speculative trading strategies including hedge funds that invest in derivatives, short sell or use leverage.</p>
+                <p><strong>Medium to High</strong>: "Medium to High" risk investments demonstrate a medium to high volatility and are for investors that are looking for long term growth and may include funds that invest in smaller companies, specific market sectors or geographic areas.</p>
+                <p><strong>Medium</strong>: "Medium risk" investments demonstrate a medium volatility and are for clients that are looking for moderate growth over a longer period of time and may include Canadian dividend, Canadian equity, U.S. equity and certain international equity funds.</p>
+                <p><strong>Low to Medium</strong>: "Low to Medium" risk investments demonstrate a low to medium volatility but a higher volatility than those described as low risk and may include bond or balanced funds.</p>
+                <p><strong>Low</strong>: "Low" risk investments demonstrate a low volatility and are for clients who are willing to accept lower returns for greater safety of capital and may include such investments as Canada Savings Bonds, GICs and money market mutual funds.</p>
+            </div>
+        </ata-percentage-breakdown>
+
+        @if (IsAdvisor)
+        {
+            <DecisionBreakdownView DecisionTable="@_decisionTable"/>
+        }
+
+    </section>
+}
+
+@code {
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [Parameter]
+    public Guid ProfileId { get; set; } = Guid.Empty;
+
+    [Parameter]
+    public bool IsAdvisor { get; set; }
+    
+    private Profile _profile;
+
+    private List<string> _exceptions = new List<string>();
+
+    private IEnumerable<Recommendation> _recommendations;
+
+    private Guid _lastProfileId;
+
+    private DecisionTable _decisionTable;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_lastProfileId == ProfileId || ProfileId == Guid.Empty) return;
+
+        _lastProfileId = ProfileId;
+
+        _profile = KycDocument.GetProfileById(ProfileId);
+        _decisionTable = _profile.CreateDecisionTable();
+        Allocation allocation = _decisionTable.SuggestedAllocation;
+        
+        _recommendations = await MediatR.Send(new RecommendationQuery(allocation.RiskLevel, KycDocument.AllocationVersion));
+    }
+
+    private Guid _lastChartProfileId;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_recommendations == null || _lastChartProfileId == ProfileId || ProfileId == Guid.Empty) return;
+
+        _lastChartProfileId = ProfileId;
+
+        RecommendationsVM recommendations = new RecommendationsVM();
+
+        foreach (Recommendation r in _recommendations)
+        {
+            recommendations.Options.Add(
+                new OptionVM
+                {
+                    OptionId = r.AllocationOptionId,
+                    Composition = r.Composition.Select(c => new CompositionVM {Portfolio = c.Key, Percent = c.Value}).ToList(),
+                    Name = r.Name,
+                    AllocationName = r.Allocation,
+                    IsSelected = _profile.Recommendation?.AllocationOptionId == r.AllocationOptionId
+                });
+        }
+        recommendations.AssignColors();
+        recommendations.Oder();
+
+        await JSRuntime.InvokeVoidAsync(
+            "uiUtils.setChartData",
+            recommendations,
+            DotNetObjectReference.Create(new ChartJsBridge(_profile, recommendations, QLayout.ValidationObserver))
+        );
+    }
+}

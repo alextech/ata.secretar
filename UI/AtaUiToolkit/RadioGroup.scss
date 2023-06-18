@@ -1,0 +1,21 @@
+﻿.radio-groups {
+  display: flex;
+  flex-direction: column;
+
+  > div,
+  > span {
+    margin-bottom: 0.5em;
+  }
+
+  > div:not(:first-child) {
+    margin-top: 2em !important;
+  }
+
+  > label:not(:first-child) {
+    margin-top: 0.5em;
+  }
+
+  .radio-group-label {
+    margin-left: 1em;
+  }
+}

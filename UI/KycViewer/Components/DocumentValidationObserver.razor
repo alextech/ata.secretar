@@ -1,0 +1,130 @@
+﻿@using System.Collections.Immutable
+@using System.Collections.ObjectModel
+@using System.Diagnostics
+@using KycViewer.Validators
+@using Ata.Investment.Profile.Domain.Household
+@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Profile
+@code {
+
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    public event EventHandler<bool> OnValidationStateChanged;
+    public event EventHandler OnValidPathsChanged;
+
+    private bool _lastValidationState;
+
+    public List<string> ValidPaths =>
+        _paths.Where(p => p.Value == true)
+            .Select(p => p.Key)
+            .ToList();
+
+    private bool HasInvalid => _paths.ContainsValue(false);
+    private bool IsValid => !HasInvalid;
+
+    private Dictionary<string, bool> _paths = new Dictionary<string, bool>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        await base.SetParametersAsync(parameters);
+
+        CaptureNavigationPaths();
+    }
+
+    private void CaptureNavigationPaths()
+    {
+        _paths = new Dictionary<string, bool>();
+
+        PClientValidator clientValidator = new PClientValidator();
+        bool isValid = clientValidator.Validate(KycDocument.PrimaryClient).IsValid;
+
+        _paths.Add($"/client/{KycDocument.PrimaryClient.Guid}/info", isValid);
+
+        if (KycDocument.IsJoint)
+        {
+            Debug.Assert(KycDocument.JointClient != null, "KycDocument.JointClient != null");
+            isValid = clientValidator.Validate(KycDocument.JointClient).IsValid;
+            _paths.Add($"/client/{KycDocument.JointClient.Guid}/info", isValid);
+        }
+
+        KycDocument.AllProfiles.ToList()
+            .ForEach(CapturePathForProfile);
+    }
+
+    private void CapturePathForProfile(Profile profile)
+    {
+        ExpectationsValidator expectationsValidator = new ExpectationsValidator();
+        ProfileAccountsValidator profileAccountsValidator = new ProfileAccountsValidator();
+
+        bool isValid = expectationsValidator.Validate(profile).IsValid && profileAccountsValidator.Validate(profile).IsValid;
+        _paths.Add(
+            $"{(profile.IsJoint ? "" : $"/client/{profile.PrimaryClient.Guid}")}/profile/{profile.Guid}/expectations",
+            isValid
+            );
+
+        isValid = profile.Recommendation != null;
+        _paths.Add(
+            $"{(profile.IsJoint ? "" : $"/client/{profile.PrimaryClient.Guid}")}/profile/{profile.Guid}/results",
+            isValid
+        );
+    }
+
+    private void TriggerValidationChangedIfNeeded()
+    {
+        bool currentValidationState = IsValid;
+        if (_lastValidationState == currentValidationState) return;
+
+        OnValidationStateChanged?.Invoke(this, currentValidationState);
+        _lastValidationState = currentValidationState;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        TriggerValidationChangedIfNeeded();
+    }
+
+    public void EnablePath(string path)
+    {
+        _paths[path] = true;
+        TriggerValidationChangedIfNeeded();
+        OnValidPathsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void DisablePath(string path)
+    {
+        _paths[path] = false;
+        TriggerValidationChangedIfNeeded();
+        OnValidPathsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ProfileAddedHandler(Profile profile)
+    {
+        CapturePathForProfile(profile);
+        TriggerValidationChangedIfNeeded();
+        OnValidPathsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ProfileRemovedHandler(Profile profile)
+    {
+        _paths = _paths
+            .Where(p => !p.Key.Contains($"profile/{profile.Guid}"))
+            .ToDictionary(p => p.Key, p => p.Value);
+
+        TriggerValidationChangedIfNeeded();
+        OnValidPathsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ClientSelectionChanged()
+    {
+        CaptureNavigationPaths();
+        TriggerValidationChangedIfNeeded();
+        OnValidPathsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+}

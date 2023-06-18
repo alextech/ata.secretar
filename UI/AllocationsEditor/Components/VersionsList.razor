@@ -1,0 +1,77 @@
+@using Ata.Investment.Allocation.Cmd
+@using Ata.Investment.Allocation.Domain
+
+@inherits Microsoft.AspNetCore.Components.OwningComponentBase
+
+@inject NavigationManager NavigationManager
+
+<section id="versionsList">
+    <table>
+        <thead>
+        <tr>
+            <th>Version</th>
+            <th>Description</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (VersionDTO version in Versions.Where(v => v.IsListed || v.IsDraft || v.IsListed != _showUnlisted))
+        {
+            <tr class="@(version.Version == SelectedVersion ? "selected" : "")">
+                <td>
+                    <a href="/allocations/@version.Version">
+                        @version.Version
+                    </a>
+                </td>
+
+                <td>
+                    <a href="/allocations/@version.Version">
+                        @if (version.Description.Length == 0)
+                        {
+                            <span>&nbsp;</span>
+                        }
+                        else
+                        {
+                            @version.Description
+                        }
+                    </a>
+                </td>
+
+                <td class="statusColumn">
+                    <a href="/allocations/@version.Version">
+                        @if (version.IsDraft)
+                        {
+                            <span title="Draft"><i class="fas fa-pencil-ruler"></i></span>
+                        }
+                        else
+                        {
+                            <span title="Published"><i class="fas fa-globe"></i></span>
+                            @if (version.IsListed)
+                            {
+                                <span title="Listed"><i class="fas fa-eye"></i></span>
+                            }
+                            else
+                            {
+                                <span title="Unlisted"><i class="fas fa-eye-slash"></i></span>
+                            }
+                        }
+                    </a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <label><input type="checkbox" checked="@(_showUnlisted)" @onchange="@(() => _showUnlisted = !_showUnlisted)"/>Show unlisted</label>
+</section>
+
+@code {
+
+    [Parameter]
+    public IEnumerable<VersionDTO> Versions { get; set; }
+
+    [Parameter]
+    public int SelectedVersion { get; set; }
+
+    private bool _showUnlisted;
+}

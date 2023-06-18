@@ -1,0 +1,30 @@
+#profileList {
+  margin: 1em 0 1em 0;
+  border: solid 1px #cbcbcb;
+  min-height: 29em;
+}
+
+#profileList table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+#profileList table th:last-child {
+  width: 4em;
+}
+
+.actions-column {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  color: rgba(210, 32, 41, 0.69);
+  font-size: 1.2em;
+}
+
+.status-column {
+  text-align: center;
+}
+
+#profileListControls {
+  grid-area: profile_list_controls;
+}

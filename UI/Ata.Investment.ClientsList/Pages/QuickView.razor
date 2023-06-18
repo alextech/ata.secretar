@@ -1,0 +1,31 @@
+﻿@page "/meeting/{MeetingId:guid}/QuickView"
+@using MediatR
+@using Ata.Investment.Profile.Cmd.Profile
+
+@inject IMediator MediatR
+@inject NavigationManager NavigationManager;
+
+<section id="sub-nav-quickView" class="sub-nav">
+    <a href="/processing" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Back</a>
+    <button class="btn btn-success" @onclick="@CompleteClickHandler"><i class="fas fa-clipboard-check"></i> Mark As Pocessed</button>
+</section>
+
+<main id="quickDocumentView">
+@if (MeetingId != Guid.Empty)
+{
+    <iframe src="/meeting/@MeetingId/quickPdf"></iframe>
+}
+</main>
+
+
+@code {
+
+    [Parameter]
+    public Guid MeetingId { get; set; }
+
+    private async void CompleteClickHandler()
+    {
+        await MediatR.Send(new ProcessMeetingCommand(MeetingId));
+        NavigationManager.NavigateTo("/processing");
+    }
+}

@@ -1,0 +1,34 @@
+@using Ata.Investment.Profile.Domain.Points
+@using Ata.Investment.Profile.Domain.Profile
+
+@code {
+
+    // TODO organize into better tab-like child content.
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public EditContext FormEditContext { get; set; }
+
+    [Parameter]
+    public Profile Profile { get; set; }
+
+    protected override void OnInitialized()
+    {
+        UpdatePointsStatus();
+        FormEditContext.OnFieldChanged += (sender, args) => UpdatePointsStatus();
+    }
+
+    private void UpdatePointsStatus()
+    {
+        // (int total, List<string> exceptions) = Profile.CalculateTotalPoints();
+
+        // QLayout.StatusHolder.SetStatus($"Profile points: {total}");
+    }
+
+    public void Dispose()
+    {
+        QLayout.StatusHolder.SetStatus("");
+    }
+}

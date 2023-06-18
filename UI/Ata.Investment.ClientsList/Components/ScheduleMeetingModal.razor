@@ -1,0 +1,105 @@
+﻿@using Ata.Investment.Profile.Domain
+@using MediatR
+@using SharedKernel
+@using Ata.Investment.ClientsList.Validators
+@using Ata.Investment.ClientsList.ViewModels
+@using Ata.Investment.Profile.Cmd.Advisors
+@using Ata.Investment.Schedule.Cmd
+
+@inject IMediator MediatR;
+
+<Modal Title="Schedule meeting" Closeable="true" @ref="@_parentModal">
+    <EditForm id="NewSchedule" class="modal-form" Model="@_newScheduleVM" OnValidSubmit="@OnValidSubmit">
+        <FluentValidationValidator
+            RealtimeValidation="@false"
+            ValidatorType="@(typeof(ScheduleNewMeetingValidator))"
+            OnValidationStateChanged="@(isValid => _isValid = isValid)"
+        />
+
+        <ValidationSummary />
+
+        <label>Meeting with: </label>
+        <select @bind="@_newScheduleVM.AdvisorId">
+            @foreach (Advisor advisor in _availableAdvisors)
+            {
+                <option value="@advisor.Guid.ToString()">@advisor.Name</option>
+            }
+        </select>
+
+        <label>Date and Time: </label>
+        <div class="datetime-group">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">
+                        <i class="fas fa-calendar-alt"></i>
+                    </span>
+                </div>
+                <input class="form-control" type="text" name="date" min="0" step="1" data-title="year-month-day" @bind="@DateComponent" @bind:format="yyyy-MM-dd"/>
+            </div>
+
+            <input type="text" name="time" @bind="@TimeComponent" @bind:format="H:mm"/>
+        </div>
+
+        <button type="submit" class="btn btn-success">Submit</button>
+    </EditForm>
+</Modal>
+
+@if (_success)
+{
+    <Modal Title="Meeting creation success." ModalType="@ModalType.SuccessOK" Opened="true">
+        Meeting for CLIENT NAME created with @_availableAdvisors.First(a => a.Guid == _newScheduleVM.AdvisorId).Name
+        on @_newScheduleVM.DateTime.ToString("dd MMMM, yyyy - H:mm").
+        [KYC data copied from last meeting]
+        /
+        [Blank KYC template used]
+
+    </Modal>
+}
+
+@code {
+    private IEnumerable<Advisor> _availableAdvisors;
+    private ScheduleNewMeetingVM _newScheduleVM;
+    private bool _success;
+    private Modal _parentModal;
+    private bool _isValid;
+
+    [Parameter]
+    public Guid? HouseholdId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _availableAdvisors = await MediatR.Send(new AllAdvisorsQuery());
+    }
+
+    private DateTimeOffset DateComponent
+    {
+        get => _newScheduleVM.DateTime;
+        set => _newScheduleVM.DateTime = new DateTimeOffset(value.Year, value.Month, value.Day, _newScheduleVM.DateTime.Hour, _newScheduleVM.DateTime.Minute, 0, TimeSpan.Zero);
+    }
+
+    private DateTimeOffset TimeComponent
+    {
+        get => _newScheduleVM.DateTime;
+        set => _newScheduleVM.DateTime = new DateTimeOffset(_newScheduleVM.DateTime.Year, _newScheduleVM.DateTime.Month, _newScheduleVM.DateTime.Day, value.Hour, value.Minute, 0, TimeSpan.Zero);
+    }
+
+    private async Task OnValidSubmit()
+    {
+        CommandResponse commandResponse = await MediatR.Send(new ScheduleMeetingCommand(HouseholdId??Guid.Empty, _newScheduleVM.AdvisorId, _newScheduleVM.DateTime));
+        if (commandResponse.Success)
+        {
+
+        }
+
+        _parentModal.Close();
+        _success = false;
+    }
+
+    public void Open()
+    {
+        _success = false;
+        _newScheduleVM = new ScheduleNewMeetingVM();
+        _parentModal.Open();
+    }
+
+}

@@ -1,0 +1,20 @@
+@import "mixins";
+
+.viewer-navigation {
+
+  .nav-profile-a {
+    @include menuLink(2.5em);
+  }
+
+  @include disabled();
+
+  .nav-profile {
+    @include subMenu(4.643em);
+  }
+
+  .active {
+    background-color: #c5c5c5;
+
+  }
+
+}

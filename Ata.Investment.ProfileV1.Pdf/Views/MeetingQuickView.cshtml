@@ -1,0 +1,451 @@
+﻿@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Points
+@using Ata.Investment.Profile.Domain.Profile
+@model Ata.Investment.ProfileV1.Pdf.Views.MeetingQuickViewViewModel
+
+@{
+    KycDocument kyc = Model.KycDocument;
+    int accountNum = 1;
+
+    IEnumerable<Profile> profiles = kyc.AllProfiles.ToList();
+    int numProfiles = profiles.Count();
+}
+
+<html lang="en">
+<head>
+    <title>Meeting Data Entry View</title>
+    <style>
+          body {
+            font-family: "Open Sans",sans-serif;
+                        font-size: 15pt;"
+          }
+          /* Generic Classes */
+          h3 {
+            background-color: black;
+            color: white;
+          }
+
+          h3 span {
+            margin-right: 1em;
+          }
+
+          ul {
+            list-style-type: none;
+          }
+
+          li {
+            text-indent: -2em;
+            margin-left: 1em;
+          }
+
+          .numericAnswer {
+            margin-left: 2em;
+          }
+
+          .pageBreak {
+            page-break-after: always;
+          }
+
+          input[type="text"] {
+            background-color: lightcyan;
+            width: 18em;
+          }
+
+          /* Specific Sections */
+          table.personalInfo {
+            border-collapse: collapse;
+          }
+
+          table.personalInfo td {
+            border: 1px solid black;
+          }
+    </style>
+</head>
+<body>
+<h2>Risk Assessment - Worksheet Fill Guide</h2>
+<table class="personalInfo">
+    <tbody>
+    <tr>
+        <td>
+            <span>Client first name</span><br />
+            <input type="text" value="@Model.FirstName" readonly />
+        </td>
+        <td>
+            <span>Last name</span><br />
+            <input type="text" value="@Model.LastName" readonly />
+        </td>
+        <td>
+            <span>Date of completion (dd-mm-yyyy)</span><br />
+            <input type="text" value="@kyc.Date.ToString("dd-MM-yyyy")" readonly />
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<h3><span>A</span> Account type</h3>
+@foreach (Profile profile in profiles)
+{
+    <input type="checkbox" checked /><span>Account #@accountNum</span><span class="accounts_list"></span>
+    <input type="text" value="@Model.AccountsForProfile(profile)" readonly />
+    <br />
+    accountNum++;
+}
+
+<h3><span>B</span> Investment time horizon</h3>
+<h4>1. When do you expect to need to withdraw a significant portion (30% or more) of the money in this investment portfolio?</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+        <th>E</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.TimeHorizon.WithdrawTime) == 0)"></td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.TimeHorizon.WithdrawTime) == 1)"></td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.TimeHorizon.WithdrawTime) == 4)"></td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.TimeHorizon.WithdrawTime) == 8)"></td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.TimeHorizon.WithdrawTime) == 16)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+<h3><span>C</span> Investment knowledge</h3>
+<b>2. How would you describe your knowledge of investments?</b>
+<ul>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.Knowledge.Level ==  3)"/> I have very little knowledge of investments and financial markets.</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.Knowledge.Level ==  4)"/> I have some knowledge and am familiar with some basic investments. I understand the difference between stocks and bonds</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.Knowledge.Level ==  5)"/> I have a working knowledge of the markets and various investments.</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.Knowledge.Level ==  6)"/> I have an in-depth knowledge of investments. I understand the risks and rewards associated with investing in various markets.</li>
+</ul>
+
+@if (numProfiles == 5)
+{
+    <div class="pageBreak"></div>
+}
+
+<h3><span>D</span> Investment objectives</h3>
+<h4>3. What is your primary objective for this portfolio</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.Goal) == 1)"></td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.Goal) == 2)"></td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.Goal) == 3)"></td>
+            <td><input type="checkbox" checked="@(ProfilePoints.RoundTimeHorizon(profile.Goal) == 4)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+@if (numProfiles is > 1 and < 5)
+{
+    <div class="pageBreak"></div>
+}
+
+<h3><span>E</span> Risk capacity</h3>
+<h4>4. What is your annual income (from all sources)?</h4>
+<ul>
+    <li><input type="checkbox" checked="@(ProfilePoints.IncomeAmountScore(kyc.PrimaryClient.Income.Amount) ==  0)"/> Less than $25 000</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.IncomeAmountScore(kyc.PrimaryClient.Income.Amount) ==  2)"/> $25 000 - $49 999</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.IncomeAmountScore(kyc.PrimaryClient.Income.Amount) ==  4)"/> $50 000 - $74 999</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.IncomeAmountScore(kyc.PrimaryClient.Income.Amount) ==  5)"/> $75 000 - $99 999</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.IncomeAmountScore(kyc.PrimaryClient.Income.Amount) ==  7)"/> $100 000 - $199 999</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.IncomeAmountScore(kyc.PrimaryClient.Income.Amount) ==  10)"/> $200 000 or more</li>
+</ul>
+
+@if (numProfiles == 1)
+{
+    <div class="pageBreak"></div>
+}
+
+<h4>5. How stable is your current and future income from sources such as salary, pension, or other investments?</h4>
+<ul>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.Income.Stability == 8)" /> Stable</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.Income.Stability == 4)" /> Somewhat stable</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.Income.Stability == 1)" /> Unstable</li>
+</ul>
+
+<h4>6. Which of the following statements best describe your overall financial situation?</h4>
+<ul>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.FinancialSituation == 0)" /> No savings and significant debt</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.FinancialSituation == 2)" /> Little savings and a fair amount of debt</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.FinancialSituation == 5)" /> Some savings and some debt</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.FinancialSituation == 7)" /> Some savings and little or no debt</li>
+    <li><input type="checkbox" checked="@(kyc.PrimaryClient.FinancialSituation == 10)" /> Significant savings and littleor no debt</li>
+</ul>
+
+@if (numProfiles == 5)
+{
+    <div class="pageBreak"></div>
+}
+
+<h4>7. What is the total of your liquid assets?</h4>
+<input type="text" value="@($"$ {kyc.PrimaryClient.NetWorth.LiquidAssets:n0}")" class="numericAnswer" readonly />
+
+<h4>8. What is the total of your fixed assets?</h4>
+<input type="text" value="@($"$ {kyc.PrimaryClient.NetWorth.FixedAssets:n0}")" class="numericAnswer" readonly />
+
+<h4>9. What is the total of your liabilities?</h4>
+<input type="text" value="@($"$ {kyc.PrimaryClient.NetWorth.Liabilities:n0}")" class="numericAnswer" readonly />
+
+@if (numProfiles is > 1 and < 5)
+{
+    <div class="pageBreak"></div>
+}
+
+<h4>10. This investment represents approximately what percentage of your total savings and investments?</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(profile.PercentageOfSavings == 10)"></td>
+            <td><input type="checkbox" checked="@(profile.PercentageOfSavings == 5)"></td>
+            <td><input type="checkbox" checked="@(profile.PercentageOfSavings == 4)"></td>
+            <td><input type="checkbox" checked="@(profile.PercentageOfSavings == 2)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+<h4>11. What is your age group?</h4>
+<ul>
+    <li><input type="checkbox" checked="@(ProfilePoints.AgeScore(kyc.PrimaryClient.Age) == 20)" /> Under 35</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.AgeScore(kyc.PrimaryClient.Age) == 8)" /> 35 - 54</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.AgeScore(kyc.PrimaryClient.Age) == 3)" /> 55 - 64</li>
+    <li><input type="checkbox" checked="@(ProfilePoints.AgeScore(kyc.PrimaryClient.Age) == 1)" /> 65 or older</li>
+</ul>
+
+@if (numProfiles == 1)
+{
+    <div class="pageBreak"></div>
+}
+
+<h3><span>F</span> Risk attitude</h3>
+<h4>12. Which of the folowing statements best describe your approach when making financial and investment decisions?</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(profile.DecisionMaking == 0)"></td>
+            <td><input type="checkbox" checked="@(profile.DecisionMaking == 4)"></td>
+            <td><input type="checkbox" checked="@(profile.DecisionMaking == 6)"></td>
+            <td><input type="checkbox" checked="@(profile.DecisionMaking == 10)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+@if (numProfiles == 5)
+{
+    <div class="pageBreak"></div>
+}
+
+<h4>13. The value of an investment portfolio will ... how much ... could you tolerate in a 12-month period?</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+        <th>E</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(profile.Decline == 0)"></td>
+            <td><input type="checkbox" checked="@(profile.Decline == 3)"></td>
+            <td><input type="checkbox" checked="@(profile.Decline == 6)"></td>
+            <td><input type="checkbox" checked="@(profile.Decline == 8)"></td>
+            <td><input type="checkbox" checked="@(profile.Decline == 10)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+@if (numProfiles == 4)
+{
+    <div class="pageBreak"></div>
+}
+
+<h4>14. When you are faced with a major investment decision, are you more concerned about potential losses or gains?</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(profile.LossesOrGains == 0)"></td>
+            <td><input type="checkbox" checked="@(profile.LossesOrGains == 3)"></td>
+            <td><input type="checkbox" checked="@(profile.LossesOrGains == 6)"></td>
+            <td><input type="checkbox" checked="@(profile.LossesOrGains == 10)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+@if (numProfiles is > 1 and < 4)
+{
+    <div class="pageBreak"></div>
+}
+
+<h4>15. The chart ... which investment would you likely ...</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(profile.LossVsGainProfile == 0)"></td>
+            <td><input type="checkbox" checked="@(profile.LossVsGainProfile == 3)"></td>
+            <td><input type="checkbox" checked="@(profile.LossVsGainProfile == 6)"></td>
+            <td><input type="checkbox" checked="@(profile.LossVsGainProfile == 10)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+<h4>16. During major market event, stock markets decreased by over 30%. If you currently owned ... you would:</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(profile.ActionOnLosses == 0)"></td>
+            <td><input type="checkbox" checked="@(profile.ActionOnLosses == 3)"></td>
+            <td><input type="checkbox" checked="@(profile.ActionOnLosses == 5)"></td>
+            <td><input type="checkbox" checked="@(profile.ActionOnLosses == 10)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+
+<h4>17. Keeping in mind how the returns fluctuate, which investment portfolio would you be most comfortable holding?</h4>
+<table class="accounts_answers">
+    <thead>
+    <tr>
+        <th></th>
+        <th>A</th>
+        <th>B</th>
+        <th>C</th>
+        <th>D</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    @{accountNum = 1;}
+    @foreach (Profile profile in profiles)
+    {
+        <tr>
+            <td>Account # @accountNum</td>
+            <td><input type="checkbox" checked="@(profile.HypotheticalProfile == 0)"></td>
+            <td><input type="checkbox" checked="@(profile.HypotheticalProfile == 4)"></td>
+            <td><input type="checkbox" checked="@(profile.HypotheticalProfile == 6)"></td>
+            <td><input type="checkbox" checked="@(profile.HypotheticalProfile == 10)"></td>
+        </tr>
+        { accountNum++; }
+    }
+    </tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,27 @@
+﻿.imageSelector {
+
+  display: flex;
+  align-items: baseline;
+  margin-right: 1em;
+  z-index: 1;
+
+  > span {
+    cursor: pointer;
+  }
+
+  ul {
+    list-style: none;
+    position: fixed;
+    top: 6em;
+    left: 2.3em;
+    background: white;
+    padding: 0;
+    border: solid;
+
+  }
+
+  img {
+    width: 3em;
+    cursor: pointer;
+  }
+}

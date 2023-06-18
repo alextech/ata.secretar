@@ -1,0 +1,156 @@
+@using System.Globalization
+@using AutoMapper
+@using FluentValidation.Results
+@using MediatR
+@using Ata.Investment.ClientsList.Validators
+@using Ata.Investment.ClientsList.ViewModels
+@using Ata.Investment.Profile.Cmd
+@using Ata.Investment.Profile.Domain.Household
+@using AtaUiToolkit
+@inject NavigationManager NavigationManager
+@inject IMediator MediatR
+
+<Modal Title="New Client" @ref="_parentDialogue" Closeable="true">
+    <EditForm Model="@ClientVM" id="new-client-form" OnValidSubmit="@HandleValidSubmit" @ref="@_form" autocomplete="off">
+
+        <FluentValidationValidator
+            RealtimeValidation="@true"
+            ValidatorType="@(typeof(NewClientValidator))"
+            OnValidationStateChanged="@((isValid) => _isValid = isValid)"
+            @ref="@_formValidator"/>
+
+            @if(_displayValidationSummary)
+            {
+                <ValidationSummary />
+            }
+
+        <label for="client-name">Name</label>
+        <InputText id="client-name" @bind-Value="@ClientVM.Name" class="form-control"/>
+
+        <label for="new-date-of-birth">Date of Birth</label>
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text"><i class="fas fa-calendar-times"></i></span>
+            </div>
+            <RealtimeInputText type="text" @bind-Value="@DateString" id="new-date-of-birth" class="form-control"/>
+            <br/>
+            @{
+                FieldIdentifier dobField = new FieldIdentifier(ClientVM, nameof(ClientVM.DateOfBirth));
+            }
+            <i>@context.GetValidationMessages(dobField).FirstOrDefault()</i>
+        </div>
+
+        <label for="client-email">Email</label>
+        <RealtimeInputText id="client-email" @bind-Value="@ClientVM.Email" class="form-control"/>
+
+        <button type="submit" disabled="@(!_isValid)" id="new-submit-client" class="btn btn-success">Submit</button>
+    </EditForm>
+</Modal>
+
+@code {
+    [Parameter]
+    public EventCallback<Client> OnValidSubmit { get; set; }
+
+    [Parameter]
+    public ClientVM ClientVM { get; set; }
+
+    private Modal _parentDialogue;
+
+    private string _dateString;
+    private string DateString
+    {
+        get => _dateString;
+        set
+        {
+            _dateString = value;
+
+            bool isValidDate = DateTimeOffset.TryParseExact(
+                value,
+                _allowedDateFormats,
+                new CultureInfo("en-US"),
+                DateTimeStyles.AllowWhiteSpaces,
+                out DateTimeOffset parsedDateOfBirth
+                );
+
+            ClientVM.DateOfBirth = isValidDate ? parsedDateOfBirth : DateTimeOffset.MinValue;
+        }
+    }
+
+    private EditForm _form;
+
+    private bool _isValid;
+
+    private FluentValidationValidator _formValidator;
+
+    protected override void OnParametersSet()
+    {
+        _displayValidationSummary = false;
+        if (ClientVM == null || ClientVM.Guid == Guid.Empty)
+        {
+            _dateString = "";
+            _isValid = false;
+        }
+        else
+        {
+            _dateString = ClientVM.DateOfBirth.ToString("yyyy-MM-dd", new CultureInfo("en-US"));
+            _isValid = true;
+        }
+    }
+
+    public void OpenForClientVm(ClientVM clientVm)
+    {
+        ClientVM = clientVm;
+        _parentDialogue.Open();
+    }
+
+    private string[] _allowedDateFormats = {
+        "yyyy-M-d",
+        "yyyy-MM-d",
+        "yyyy-M-dd",
+        "yyyy-MM-dd",
+        "d-M-yyyy",
+        "d-MM-yyyy",
+        "dd-M-yyyy",
+        "dd-MM-yyyy",
+        "d MMMM, yyyy",
+        "MMM d, yyyy",
+        "MMMM d, yyyy",
+        "dd/MM/yyyy",
+        "dd/M/yyyy",
+        "d/MM/yyyy",
+        "d/M/yyyy"
+    };
+
+    private bool _displayValidationSummary;
+    private async Task HandleValidSubmit()
+    {
+        Guid clientGuid = await MediatR.Send(new ClientExistsQuery(ClientVM.Name, ClientVM.Email));
+
+        // TODO move to MediatR validation pipeline on server
+        if (clientGuid != Guid.Empty && clientGuid != ClientVM.Guid)
+        {
+            _formValidator.DisplayErrors(
+                new Dictionary<string, List<string>>()
+                {
+                    { nameof(ClientVM.Name), new List<string>() {"Client name and email combination already exists"} }
+                });
+
+            _displayValidationSummary = true;
+
+            return;
+        }
+
+        Client client;
+        if (ClientVM.Guid == Guid.Empty)
+        {
+            client = Client.Create(ClientVM.Name, ClientVM.Email, ClientVM.DateOfBirth);
+        }
+        else
+        {
+            client = Mapper.Map<Client>(ClientVM);
+        }
+
+        _parentDialogue.Close();
+        await OnValidSubmit.InvokeAsync(client);
+    }
+}

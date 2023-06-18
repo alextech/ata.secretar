@@ -1,0 +1,93 @@
+@using Ata.Investment.Profile.Domain.KYC
+@using System.Threading
+@using Ata.Investment.Profile.Domain.Profile
+
+<li>
+    <a href="@($"{QLayout.BaseUrl}#/client/{Client.Guid}/info")" class="nav-client-a">
+        <i class="fas fa-user"></i> <span class="nav-client-name">@Client.Name</span>
+        <span class="pull-right-container">
+            <i class="fa fa-angle-left @(IsOpened ? "fa-rotate-270" : "") pull-right"></i>
+        </span>
+    </a>
+
+    @if (IsOpened)
+    {
+        <ul class="nav-client">
+            <li>
+                <a href="@QLayout.BaseUrl#/client/@Client.Guid/info" class="@(_isActive ? "active" : "")"><i class="far fa-file-alt"></i> Client Information</a>
+            </li>
+
+            @{
+                int guidPosition = 45; // length of /profile+guid substring
+            }
+            @foreach (Profile profile in Client.Profiles)
+            {
+                <ProfileMenu
+                    Profile="@profile"
+                    ValidPaths="@(ValidPaths.Where(p => p.Contains(profile.Guid.ToString())).Select(p => p.Substring(guidPosition)))"
+                    IsOpened="@(SelectedProfileId == profile.Guid)"
+                    IsEnabled="@_isClientValid"
+                />
+            }
+
+            @if (!IsMeetingCompleted)
+            {
+                <li>
+                    <a @onclick="OnNewProfileClicked"
+                        class="@(!_isClientValid ? "disabled" : "")">
+                        <i class="fas fa-plus"></i> Add Profile
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+</li>
+
+@code
+{
+
+    [Parameter]
+    public PClient Client { get; set; }
+
+    [Parameter]
+    public bool IsMeetingCompleted { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public Guid SelectedProfileId { get; set; }
+
+    [Parameter]
+    public IEnumerable<string> ValidPaths { get; set; } = new List<string>();
+
+    [Parameter]
+    public bool IsOpened { get; set; }
+
+    [Parameter]
+    public EventCallback<NewProfileSelectionEvent> OnNewProfileSelected { get; set; }
+
+    private bool _isClientValid;
+    private bool _isActive;
+
+    private void OnNewProfileClicked(MouseEventArgs e)
+    {
+        if (!_isClientValid) return;
+
+        OnNewProfileSelected.InvokeAsync(new NewProfileSelectionEvent()
+        {
+            ForClientId = Client.Guid,
+            From = DateTimeOffset.Now.Year + 10,
+            To = DateTimeOffset.Now.Year +10
+        });
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _isActive = IsOpened && SelectedProfileId == Guid.Empty;
+        _isClientValid = ValidPaths.Contains("info");
+    }
+
+}

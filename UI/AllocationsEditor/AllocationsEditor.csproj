@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MediatR" Version="9.0.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Components" Version="6.0.2" />
+      <PackageReference Include="Microsoft.AspNetCore.Components.Forms" Version="6.0.2" />
+      <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="6.0.2" />
+      <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.2.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Allocation\Ata.Investment.Allocation.Cmd\Ata.Investment.Allocation.Cmd.csproj" />
+      <ProjectReference Include="..\..\Ata.Investment.Allocation.Domain\Ata.Investment.Allocation.Domain.csproj" />
+      <ProjectReference Include="..\AtaUiToolkit\AtaUiToolkit.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Pages\Allocations.scss">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Shared" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,26 @@
+﻿#NewSchedule {
+  display: grid;
+  grid-row-gap: 0.5em;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+
+  select {
+    height: 2.5em;
+  }
+
+
+  .datetime-group {
+    display: flex;
+  }
+
+  button[type="submit"] {
+    grid-column: 2;
+    justify-self: end;
+    width: 7em;
+  }
+
+  .validation-errors {
+    grid-column: 1/3;
+    margin: 0;
+  }
+}

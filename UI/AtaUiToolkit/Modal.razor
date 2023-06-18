@@ -1,0 +1,123 @@
+﻿@namespace AtaUiToolkit
+
+@using Microsoft.AspNetCore.Components.Web
+
+@if (Opened)
+{
+    <section class="panel modal @(Opened ? "show-modal" : string.Empty)">
+        <div class="modal-content">
+            <div class="title"><span>@Title</span>
+                @if (Closeable)
+                {
+                    <span class="icons"> <svg xmlns="http://www.w3.org/2000/svg" @onclick="@CloseDialogue" viewBox="0 0 384 512"><path fill='#ffffff' d="M323.1 441l53.9-53.9c9.4-9.4 9.4-24.5 0-33.9L279.8 256l97.2-97.2c9.4-9.4 9.4-24.5 0-33.9L323.1 71c-9.4-9.4-24.5-9.4-33.9 0L192 168.2 94.8 71c-9.4-9.4-24.5-9.4-33.9 0L7 124.9c-9.4 9.4-9.4 24.5 0 33.9l97.2 97.2L7 353.2c-9.4 9.4-9.4 24.5 0 33.9L60.9 441c9.4 9.4 24.5 9.4 33.9 0l97.2-97.2 97.2 97.2c9.3 9.3 24.5 9.3 33.9 0z"/></svg></span>
+                }
+            </div>
+            <div class="panelContent @Class">@ChildContent</div>
+
+            @if (ModalType != ModalType.NoAction)
+            {
+                <div class="options">
+                    @switch (ModalType)
+                    {
+                        case ModalType.ErrorOK:
+                            <input type="button" value="OK" class="btn btn-danger" @onclick="@Close">
+
+                            break;
+                        case ModalType.SuccessOK:
+                            <input type="button" value="OK" class="btn btn-success" @onclick="@(() => { CloseHandler.InvokeAsync(EventArgs.Empty); Close(); })">
+
+                            break;
+
+                        case ModalType.WarningOK:
+                            <input type="button" value="OK" class="btn btn-warning" @onclick="@Close">
+
+                            break;
+                        case ModalType.YesNo:
+                            <input type="button" value="Yes" class="btn btn-success" @onclick="@(() => { YesHandler.InvokeAsync(true); Close(); })"/>
+                            <input type="button" value="No" class="btn btn-warning" @onclick="@(() => { NoHandler.InvokeAsync(false); Close(); })"/>
+
+                            break;
+                        case ModalType.OkCancel:
+                            <input type="button" value="Submit" class="btn btn-success" @onclick="@(() => { SubmitHandler.InvokeAsync(true); Close(); })" disabled="@(!EnableSubmit)"/>
+                            <input type="button" value="Cancel" class="btn btn-warning" @onclick="@(() => { CancelHandler.InvokeAsync(true); Close(); })"/>
+
+                            break;
+                    }
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@code {
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+    
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public bool Opened
+    {
+        get => _opened;
+        set
+        {
+            _opened = value;
+            if (value)
+            {
+                OnOpened.InvokeAsync();
+            }
+        }
+    }
+
+    [Parameter]
+    public ModalType ModalType { get; set; } = ModalType.NoAction;
+
+    [Parameter]
+    public EventCallback OnOpened { get; set; }
+
+    [Parameter]
+    public EventCallback YesHandler { get; set; }
+
+    [Parameter]
+    public EventCallback NoHandler { get; set; }
+
+    [Parameter]
+    public bool Closeable { get; set; }
+
+    [Parameter]
+    public EventCallback CloseHandler { get; set; }
+
+    [Parameter]
+    public EventCallback SubmitHandler { get; set; }
+
+    [Parameter]
+    public EventCallback CancelHandler { get; set; }
+
+    [Parameter]
+    public bool EnableSubmit { get; set; } = true;
+
+    private async Task CloseDialogue(MouseEventArgs e)
+    {
+        Opened = false;
+        await CloseHandler.InvokeAsync(EventArgs.Empty);
+    }
+
+    public void Open()
+    {
+        Opened = true;
+        StateHasChanged();
+    }
+
+    public void Close()
+    {
+        Opened = false;
+        StateHasChanged();
+    }
+
+    private bool _opened;
+}

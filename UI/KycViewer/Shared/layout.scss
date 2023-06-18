@@ -1,0 +1,288 @@
+﻿@import "~atauitoolkit/variables";
+
+html, body {
+    height: 100%;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+body {
+    overflow-y:scroll;
+    background-color: #f6f6f6;
+    display: grid;
+    margin: 0;
+    font-family: "Open Sans", sans-serif;
+    font-size: 0.9rem;
+    grid-template-columns: 22em 90em;
+    grid-template-rows: 2.8em 1fr 1fr;
+    grid-row-gap: 1em;
+    grid-column-gap: 1em;
+
+    user-select: none;
+}
+
+header {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    grid-column: 1;
+    background-color: $ata-orange;
+    color: white;
+    height: 100%;
+}
+
+nav {
+    display: flex;
+    background: #dbdbdb;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: -1em;
+    grid-row: 2/4;
+}
+
+footer {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 3em;
+
+    margin-bottom: 1em;
+
+    border-top-style: solid;
+    border-top-color: darkgray;
+}
+
+.sub-nav {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    grid-column: 2;
+    z-index: 1;
+    background-color: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.3em;
+    margin-left: -1em;
+    gap: 0.3em;
+}
+
+.sub-nav .separator {
+    margin-left: 0.4em;
+}
+
+.sub-nav .separator:before {
+    content: '';
+    width: 0;
+    height: 2.2em;
+    position: absolute;
+    border: 1px inset #ced4da;
+    top: 0;
+    margin: 0.2em 0 0 -0.1em;
+}
+
+.show-modal {
+    margin: 0 !important;
+}
+
+main#clientsList {
+    display: grid;
+
+    background-color: #f6f6f6;
+    grid-column: 2;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+header h1 {
+    padding: 0.1em 0 0.2em 0.5em;
+    margin: 0;
+
+    a {
+        text-decoration: none;
+        color: #ffffff;
+    }
+}
+
+nav .options {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 1em;
+}
+
+    nav .options img {
+        width: 3em;
+    }
+
+    nav .options span {
+        font-size: 1.3em;
+        text-shadow: 2px 2px 8px #baaeae;
+    }
+
+    .sidebar-menu i {
+        margin-right: 1em;
+        font-size: large;
+    }
+    
+.sidebar-menu {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    i.fa-handshake {
+        margin-right: 0.6em;
+    }
+}
+
+    .sidebar-menu > li {
+        line-height: 32px;
+    }
+
+        .sidebar-menu > li > a {
+            cursor: pointer;
+            font-size: 1em;
+            text-decoration: none;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 12px 5px 12px 1.071em;
+            border-left: 3px solid #d0d0d0;
+            color: #000000;
+        }
+
+        .sidebar-menu a.nav-profile-a {
+            img {
+                width: 1.5em;
+                margin-right: 0.8em;
+            }
+        }
+
+            .sidebar-menu > li > a:hover {
+                background-color: #d0d0d0;
+            }
+
+            .sidebar-menu > li > a svg {
+                height: 1.3em;
+                width: 2.1em;
+                margin-right: 0.75em;
+            }
+
+        .sidebar-menu > li.active > a {
+            border-left: 3px solid $ata-orange;
+        }
+
+    .sidebar-menu .active {
+        background-color: #c5c5c5;
+    }
+
+    .sidebar-menu .joint-submenu {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+        .sidebar-menu .joint-submenu > li {
+            line-height: 32px;
+        }
+
+            .sidebar-menu .joint-submenu > li > a {
+                font-size: 1em;
+                text-decoration: none;
+                height: 100%;
+                display: block;
+                align-items: center;
+                padding: 12px 5px 12px 2.5em;
+                border-left: 3px solid #d0d0d0;
+                color: #000000;
+            }
+
+            .sidebar-menu .pull-right-container {
+                margin-left: auto;
+            }
+
+                .sidebar-menu .joint-submenu > li > a:hover {
+                    background-color: #d0d0d0;
+                }
+
+                .sidebar-menu .joint-submenu > li > a svg {
+                    height: 1.3em;
+                    width: 2.1em;
+                    margin-right: 0.75em;
+                }
+
+            .sidebar-menu .joint-submenu > li.active > a {
+                border-left: 3px solid $ata-orange;
+            }
+
+    .sidebar-menu [data-disabled] {
+        color: #adb5bd !important;
+    }
+
+.not-visible {
+    display: none !important;
+}
+
+svg {
+    width: 1em;
+    cursor: pointer;
+    float: right;
+}
+
+ata-panel p:last-of-type {
+    margin-bottom: 0;
+}
+
+/*TODO move to radiogroup*/
+
+.radio-group-label {
+    display: flex;
+
+}
+
+a.btn {
+    text-decoration: none;
+}
+
+.modal-content.loading {
+    width: auto;
+    background-color: transparent;
+}
+
+.modal-content.loading img {
+    display: block;
+}
+
+.loadingOverlay {
+    display: flex;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    z-index: 1
+}
+
+.loadingOverlay img {
+    align-self: center;
+}
+
+.loadingWrapper {
+    display: flex;
+    align-items: center;
+}
+
+
+.timelineClientSelect {
+    height: 2.5em;
+    width: 20em;
+}

@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Ata.Investment.Profile.Domain.Household.Client" Collapsed="true">
+    <Position X="4" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Household\Client.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Ata.Investment.Profile.Domain.Household.Household">
+    <Position X="2.75" Y="1" Width="1.5" />
+    <AssociationLine Name="JointClient" Type="Ata.Investment.Profile.Domain.Household.Client">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.027" Y="0.112" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <AssociationLine Name="PrimaryClient" Type="Ata.Investment.Profile.Domain.Household.Client">
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="-1.057" Y="0.82" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAEAA=</HashCode>
+      <FileName>Household\Household.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="JointClient" />
+      <Property Name="PrimaryClient" />
+      <Property Name="NetWorth" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Ata.Investment.Profile.Domain.Household.NetWorth">
+    <Position X="6.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAACAAAAAQAAAAACAAAAAAEA=</HashCode>
+      <FileName>Household\NetWorth.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Ata.Investment.Profile.Domain.Profile">
+    <Position X="8" Y="6" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAQAACAAACAEAgBAAAAAAQACAAAACCBAAAAAAAIAAg=</HashCode>
+      <FileName>Profile.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Objectives" />
+      <Property Name="RiskTolerance" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Ata.Investment.Profile.Domain.Objectives" Collapsed="true">
+    <Position X="12" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAQAAAAAACAAgAAAAACAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Objectives.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Ata.Investment.Profile.Domain.RiskTolerance" Collapsed="true">
+    <Position X="12" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAgAAAACAAAgAAAAAAAAAAAAECAA=</HashCode>
+      <FileName>RiskTolerance.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

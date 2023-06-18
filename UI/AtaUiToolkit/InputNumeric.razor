@@ -1,0 +1,14 @@
+@inherits InputBase<int>
+
+<ata-numeric @bind-Value="@CurrentValue" @bind-Value:event="oninput" @attributes="@AdditionalAttributes" />
+
+@code {
+
+    protected override bool TryParseValueFromString(string value, out int result, out string validationErrorMessage)
+    {
+        result = int.Parse(value);
+        validationErrorMessage = null;
+        return true;
+    }
+
+}

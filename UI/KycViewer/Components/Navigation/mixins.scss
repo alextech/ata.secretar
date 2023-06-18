@@ -1,0 +1,49 @@
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~atauitoolkit/variables";
+
+
+@mixin menuLink($indent) {
+  font-size: 1em;
+  text-decoration: none;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  padding: 12px 5px 12px $indent;
+  border-left: 3px solid #d0d0d0;
+  &:hover {
+    background-color: #d0d0d0;
+  }
+  color: #000000;
+
+  svg {
+    height: 1.3em;
+    width: 2.1em;
+    margin-right: 0.75em;
+  }
+}
+
+@mixin subMenu($indent) { // apply to UL
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    line-height: 32px;
+    > a {
+      @include menuLink($indent);
+    }
+  }
+
+  // move to attribute of client
+  > li.active > a {
+    border-left: 3px solid $ata-orange;
+  }
+}
+
+@mixin disabled() {
+  [data-disabled] {
+    color: $gray-500 !important;
+  }
+}

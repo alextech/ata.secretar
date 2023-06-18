@@ -1,0 +1,53 @@
+﻿@page "/history"
+@using MediatR
+@using global::History.Cmd
+
+@inject IMediator MediatR
+
+<section class="sub-nav">
+
+</section>
+
+<main id="historyTable">
+<table>
+    <thead>
+    <tr>
+        <th>DateTime</th>
+        <th>Advisor</th>
+        <th>Action</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    @if (_historyLoaded)
+    {
+        @foreach (AccessLog log in _logs)
+        {
+            <tr>
+                <td>@log.TimeStamp</td>
+                <td>@log.User</td>
+                <td>@log.LogDisplayName</td>
+                <td>@log.Description</td>
+            </tr>
+        }
+    }
+    </tbody>
+</table>
+</main>
+
+@code {
+
+    private IEnumerable<AccessLog> _logs = new List<AccessLog>();
+
+    private bool _historyLoaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _logs = await MediatR.Send(new HistoryQuery());
+        _historyLoaded = true;
+    }
+
+}

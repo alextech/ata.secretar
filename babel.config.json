@@ -1,0 +1,26 @@
+{
+  "presets": [
+    ["@babel/preset-env", {
+      "shippedProposals":  true,
+      "useBuiltIns" : "usage",
+      "corejs": 3,
+      "targets": {
+        "browsers": ["chrome >= 91"]
+      }
+    }]
+  ],
+  "env": {
+    "production": {
+      "presets": [
+        ["@babel/preset-env", {
+          "shippedProposals": true,
+          "useBuiltIns" : "usage",
+          "corejs": 3,
+          "targets": {
+            "browsers": ["chrome >= 91"]
+          }
+        }]
+      ]
+    }
+  }
+}

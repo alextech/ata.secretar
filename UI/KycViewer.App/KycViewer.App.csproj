@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MediatR" Version="9.0.0" />
+        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.2" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.FeatureManagement" Version="2.4.0" />
+        <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AllocationsEditor\AllocationsEditor.csproj" />
+      <ProjectReference Include="..\KycViewer\KycViewer.csproj" />
+      <ProjectReference Include="..\Ata.Investment.ClientsList\Ata.Investment.ClientsList.csproj" />
+    </ItemGroup>
+
+</Project>

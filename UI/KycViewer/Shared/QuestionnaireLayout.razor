@@ -1,0 +1,486 @@
+@page "/meeting/{MeetingId:guid}"
+
+@using Microsoft.AspNetCore.Routing
+@using Microsoft.AspNetCore.Routing.Template
+@using Microsoft.JSInterop
+@using System.Threading
+@using KycViewer.Components.Navigation
+@using KycViewer.Components.Timeline
+@using Ata.Investment.Profile.Domain
+@using KycViewer.Pages
+@using KycViewer.Components
+@using MediatR
+@using SharedKernel
+@using Ata.Investment.Profile.Cmd
+@using Ata.Investment.Profile.Cmd.Profile
+@using AtaUiToolkit
+@using KycDocument = Ata.Investment.Profile.Domain.KYC.KycDocument
+@using System.Diagnostics
+@using Ata.Investment.Profile.Cmd.Advisors
+@using Ata.Investment.Profile.Domain.KYC
+@inherits Microsoft.AspNetCore.Components.LayoutComponentBase
+
+@implements IDisposable
+
+@layout EmptyLayout
+
+@inject IJSRuntime JSRuntime;
+
+@inject NavigationManager NavigationManager
+@inject IMediator MediatR
+@inject TimerService TimerService;
+
+@if (_kycDocument != null)
+{
+<header>
+    <h1><a href="/clients/@_kycDocument.PrimaryClient.Guid">TSG Investment</a></h1>
+</header>
+
+    <CascadingValue Value="@_kycDocument">
+    <CascadingValue Value="@_meeting">
+    <CascadingValue Value="@this">
+
+    <section class="sub-nav">&nbsp;
+        <LayoutStatusHolder @ref="@_statusHolder" />
+
+        <Toolbar ProfileId="@ProfileId" />
+    </section>
+
+    <DocumentValidationObserver @ref="@_validationObserver" />
+
+    <Navigation
+        SelectedProfileId="@ProfileId"
+        SelectedClientId="@ClientId"
+        OnNewProfileSelected="@OnNewProfileSelected"
+        @ref="@Navigation"
+    />
+
+    <main id="questionnaireLayout">
+        @switch (Page)
+        {
+            case null:
+            case "meeting":
+                <MeetingPage AvailableAdvisors="@_availableAdvisors" OnSingleJointToggle="@OnSingleJointToggle"/>
+
+                break;
+            case "info":
+                <FinancialState ClientId="@_displayClientId" IsAdvisor="IsAdvisor" />
+
+                break;
+            case "expectations":
+                <Expectations ProfileId="@ProfileId" IsAdvisor="IsAdvisor" />
+
+                break;
+            case "results":
+                <Results ProfileId="@ProfileId" IsAdvisor="IsAdvisor" />
+
+                break;
+        }
+
+        @if (_dialogue == "newProfile")
+        {
+            <NewProfileModal
+                NewProfileEvent="@_newProfileSelectionEvent"
+                Opened="true"
+                CloseHandler="@NewProfileCloseHandler"
+            />
+        }
+    </main>
+
+    <footer>
+        <p>
+            Meeting Notes:
+            <form>
+                <textarea is="ata-rich-editor" name="kyc_notes" class="notes" title="Kyc Notes"></textarea>
+                <input type="hidden" name="sectionMetadata" data-section="document" data-section-id="@Guid.Empty" />
+            </form>
+        </p>
+
+
+        <Feature Name="VisualTimeline">
+            @if (ClientId != Guid.Empty)
+            {
+                // TODO find way for joint
+                <Timeline
+                    PrimaryClient="@_kycDocument.GetClientById(ClientId)"
+                    OnNewProfileSelected="@OnNewProfileSelected"
+
+                    @ref="@Timeline"
+                />
+            }
+        </Feature>
+    </footer>
+
+    </CascadingValue>
+    </CascadingValue>
+    </CascadingValue>
+}
+
+@code
+{
+    public const string ADVISOR_MODE = "advisor";
+    public const string CLIENT_MODE = "client";
+
+    public string Page { get; set; }
+
+    [Parameter]
+    public Guid MeetingId { get; set; }
+
+    private Guid ClientId
+    {
+        get => _clientId;
+        set
+        {
+            _clientId = value;
+            if (value != Guid.Empty)
+            {
+                _displayClientId = value;
+            }
+        }
+    }
+
+    private Guid _displayClientId;
+
+    public Guid ProfileId { get; set; } = Guid.Empty;
+
+    public string BaseUrl => $"/meeting/{MeetingId}?viewMode={ViewMode}";
+
+    public LayoutStatusHolder StatusHolder => _statusHolder;
+
+    public Navigation Navigation;
+
+    public Timeline Timeline;
+
+    private KycDocument _kycDocument;
+
+    private Meeting _meeting;
+
+    private Guid _clientId;
+
+    private string _dialogue;
+
+    private NewProfileSelectionEvent _newProfileSelectionEvent;
+
+    public DocumentValidationObserver ValidationObserver => _validationObserver;
+
+    public string ClientPath { get; private set; }
+
+    public string ViewMode = CLIENT_MODE;
+
+    private bool IsAdvisor => ViewMode == ADVISOR_MODE;
+
+    private IEnumerable<Advisor> _availableAdvisors = new List<Advisor>();
+
+    private static readonly string PrimaryPlaceholder = new Guid(1, 0, 0, new byte[8]).ToString();
+    private static readonly string JointPlaceholder = new Guid(2, 0, 0, new byte[8]).ToString();
+
+    private static readonly List<string> Routes = new List<string>
+    {
+        "/client/{ClientId:Guid}/{Page}/{Question:string?}",
+        "/client/{ClientId:Guid}/profile/{ProfileId}/{Page}/{Question:string?}",
+        "/profile/{ProfileId}/{Page}/{Question:string?}",
+    };
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += HandleViewModeChanged;
+        ParseViewMode();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Meeting meeting = await MediatR.Send(new MeetingByIdQuery(MeetingId));
+        _meeting = meeting;
+        _kycDocument = _meeting.KycDocument;
+
+        _availableAdvisors = await MediatR.Send(new AllAdvisorsQuery());
+    }
+
+    private void HandleViewModeChanged(object sender, LocationChangedEventArgs e)
+    {
+        ParseViewMode();
+        RouteToPage();
+        StateHasChanged();
+    }
+
+    private void ParseViewMode()
+    {
+        NavigationManager.TryGetQueryString<string>("viewMode", out string viewMode);
+        if (viewMode != CLIENT_MODE && viewMode != ADVISOR_MODE)
+        {
+            viewMode = CLIENT_MODE;
+        }
+
+        // ReSharper disable once InvertIf
+        if (ViewMode != viewMode)
+        {
+            ViewMode = viewMode;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        _highlightQuestionId = null;
+        RouteToPage();
+    }
+
+    private void RouteToPage()
+    {
+        string url = NavigationManager.Uri;
+        int indexOfHash = url.IndexOf("#", StringComparison.Ordinal);
+        if (indexOfHash < 0)
+        {
+            Page = "meeting";
+
+            ClientId = Guid.Empty;
+            ProfileId = Guid.Empty;
+
+            base.OnParametersSet();
+            return;
+        }
+
+        ClientPath = url.Substring(indexOfHash+1);
+
+        RouteValueDictionary values = Match(ClientPath);
+
+        ClientId = Guid.Empty;
+        if (ClientPath.Length < 2)
+        {
+            Page = "meeting";
+            StatusHolder?.SetStatus("");
+            ProfileId = Guid.Empty;
+        }
+        else
+        {
+            if (values.ContainsKey("ClientId"))
+            {
+                values.TryGetValue("ClientId", out object id);
+                string clientId = (string)id;
+
+                if (clientId != null)
+                {
+                    // needed for convention based links, where instead of direct to client navigation need to request
+                    // generic "go to primary" or "go to joint"
+                    if (clientId == PrimaryPlaceholder)
+                    {
+                        ClientId = _kycDocument.PrimaryClient.Guid;
+                    }
+                    else if (clientId == JointPlaceholder)
+                    {
+                        Debug.Assert(_kycDocument.JointClient != null, "_kycDocument.JointClient != null");
+                        ClientId = _kycDocument.JointClient.Guid;
+                    }
+                    else
+                    {
+                        ClientId = Guid.Parse(clientId);
+                    }
+
+                }
+            }
+
+            if (values.ContainsKey("ProfileId"))
+            {
+                values.TryGetValue("ProfileId", out object profileId);
+                if (profileId != null) ProfileId = Guid.Parse((string)profileId);
+            } else {
+                ProfileId = Guid.Empty;
+            }
+
+            values.TryGetValue("Page", out object page);
+            if (page != null)
+            {
+                Page = (string)page;
+            }
+        }
+
+        _dialogue = null;
+
+        // ReSharper disable once InvertIf
+        if (values.ContainsKey("Question"))
+        {
+            _navigateHighlight = true;
+            values.TryGetValue("Question", out object question);
+            _highlightQuestionId = (string) question;
+        }
+    }
+
+    private RouteValueDictionary Match(string requestPath)
+    {
+        RouteValueDictionary values = new RouteValueDictionary();
+
+        foreach (string route in Routes)
+        {
+            RouteTemplate template = TemplateParser.Parse(route);
+            TemplateMatcher matcher = new TemplateMatcher(template, GetDefaults(template));
+
+            bool matched = matcher.TryMatch(requestPath, values);
+
+            if (matched) break;
+        }
+
+        return values;
+    }
+
+    private RouteValueDictionary GetDefaults(RouteTemplate parsedTemplate)
+    {
+        RouteValueDictionary result = new RouteValueDictionary();
+
+        foreach (TemplatePart parameter in parsedTemplate.Parameters)
+        {
+            if (parameter.DefaultValue != null)
+            {
+                result.Add(parameter.Name, parameter.DefaultValue);
+            }
+        }
+
+        return result;
+    }
+
+    private bool _isBridgeRegistered;
+    private bool _domainListenersAdded;
+    private DotNetObjectReference<KycDocumentJsBridge> _kycDocumentRef;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_kycDocument != null && _isBridgeRegistered == false)
+        {
+             _kycDocumentRef = DotNetObjectReference.Create(new KycDocumentJsBridge(_kycDocument));
+
+            await JSRuntime.InvokeAsync<string>(
+                "uiUtils.registerDocumentNotesBridge",
+                _kycDocumentRef
+                );
+
+            _isBridgeRegistered = true;
+        }
+
+
+        if (_kycDocument != null)
+        {
+            _kycDocument.Notes.TryGetValue("kyc_notes", out string kycNotes);
+            await JSRuntime.InvokeVoidAsync("uiUtils.setRichTextValue", "kyc_notes", kycNotes ?? "");
+            await JSRuntime.InvokeVoidAsync("uiUtils.toggleReadOnlyRichTextValue", "kyc_notes", _meeting.IsCompleted);
+
+            if (!_domainListenersAdded)
+            {
+                _kycDocument.ProfileListChanged += OnProfileListChanged;
+                _domainListenersAdded = true;
+            }
+        }
+    }
+
+    private string _lastPage;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_meeting == null)
+        {
+            Console.WriteLine("Parameters set has a null _meeting. Was it not loaded during initialization?");
+            // NavigationManager.NavigateTo("/clients");
+            return;
+        }
+
+        _kycDocument = _meeting.KycDocument;
+
+        if (_lastPage != Page) {
+            await SaveManagedMeeting();
+
+            _lastPage = Page;
+        }
+    }
+
+    private void OnSingleJointToggle(DocumentMembers documentMembers)
+    {
+        ValidationObserver.ClientSelectionChanged();
+    }
+
+    private void OnNewProfileSelected(NewProfileSelectionEvent e)
+    {
+        _newProfileSelectionEvent = e;
+
+        _dialogue = "newProfile";
+        if (e.IsJoint)
+        {
+            Debug.Assert(e.ForClientId == Guid.Empty, "e.ForClientId == Guid.Empty");
+        }
+    }
+
+    private void SaveDocument(SemaphoreSlim semaphore)
+    {
+        if (_meeting.IsCompleted)
+        {
+            semaphore.Release();
+            return;
+        }
+
+        // Task.Run(async () =>
+        // {
+            // _kycDocument.Notes["kyc_notes"] = await JSRuntime.InvokeAsync<string>("uiUtils.getRichTextValue", "kyc_notes");
+            MediatR.Send(new SaveMeetingCommand(_meeting));
+
+            semaphore.Release();
+        // });
+    }
+
+    private async void OnProfileListChanged(object? sender, EventArgs eventArgs)
+    {
+        await SaveManagedMeeting();
+    }
+
+    public async Task SaveManagedMeeting()
+    {
+        await TimerService.RunImmediately();
+    }
+
+    private bool _navigateHighlight;
+    private string _highlightQuestionId;
+    private DocumentValidationObserver _validationObserver;
+    private LayoutStatusHolder _statusHolder;
+
+    public void NavigateAndHighlight(string url, string questionId)
+    {
+        _navigateHighlight = true;
+        _highlightQuestionId = questionId;
+        // works on blazor server, but not webassembly
+        // because JS highlighting gets invoked before rendering is finished
+        // NavigationManager.LocationChanged += HighlightQuestion;
+        NavigationManager.NavigateTo(url);
+    }
+
+    private void HighlightQuestion(object? sender, LocationChangedEventArgs locationChangedEventArgs)
+    {
+        if (_navigateHighlight != true) return;
+
+        JSRuntime.InvokeVoidAsync("uiUtils.highlightQuestion", _highlightQuestionId);
+
+        _navigateHighlight = false;
+        NavigationManager.LocationChanged -= HighlightQuestion;
+    }
+
+    private void NewProfileCloseHandler()
+    {
+        _dialogue = "";
+        JSRuntime.InvokeVoidAsync("uiUtils.deleteTimelinePlaceholder", _newProfileSelectionEvent.PlaceholderId);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            TimerService.OnElapsed += SaveDocument;
+            TimerService.SetTimer(60000);
+        }
+
+        HighlightQuestion(null, null);
+    }
+    public async void Dispose()
+    {
+        TimerService.Stop();
+        TimerService.OnElapsed -= SaveDocument;
+        NavigationManager.LocationChanged -= HandleViewModeChanged;
+        _kycDocument.ProfileListChanged -= OnProfileListChanged;
+
+        await JSRuntime.InvokeVoidAsync(
+            "uiUtils.unregisterDocumentNotesBridge"
+        );
+        _kycDocumentRef.Dispose();
+    }
+}

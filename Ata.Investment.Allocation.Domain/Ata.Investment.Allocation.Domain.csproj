@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <NullableContextOptions>enable</NullableContextOptions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Types\**" />
+    <EmbeddedResource Remove="Types\**" />
+    <None Remove="Types\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+</Project>

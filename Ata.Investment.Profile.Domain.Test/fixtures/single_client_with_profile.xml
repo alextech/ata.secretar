@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<meeting id="3437d0fc-861c-417e-985d-6b34169d0301">
+    <Date>2021-07-08T18:14:17.9791362+03:00</Date>
+    <Purpose>unit test xml single client with profile</Purpose>
+    <ServiceStandard>WealthAccumulation</ServiceStandard>
+    <Advisor id="e01a4d7b-8396-4312-b3db-c9506b647001">
+        <Name>Провоторов, Радион Александрович</Name>
+        <Credentials>CFP, BBA, BMath</Credentials>
+        <Email>ra_provotorov@example.com</Email>
+    </Advisor>
+    <AllocationVersion>2101</AllocationVersion>
+    <PrimaryClient id="c6c96369-12a3-4c18-927d-08454710334a">
+        <Name>Task 699</Name>
+        <Email>xml@task.com</Email>
+        <DateOfBirth>1989-04-14T00:00:00+04:00</DateOfBirth>
+        <Knowledge>
+            <Level>3</Level>
+            <Notes>Knowledge notes</Notes>
+        </Knowledge>
+        <Income>
+            <Amount>2</Amount>
+            <Stability />
+            <Notes>Income notes</Notes>
+        </Income>
+        <NetWorth>
+            <LiquidAssets>0</LiquidAssets>
+            <FixedAssets>2</FixedAssets>
+            <Liabilities>1</Liabilities>
+            <Notes>Networth notes</Notes>
+        </NetWorth>
+        <FinancialSituation>7</FinancialSituation>
+
+        <Profiles>
+            <Profile id="9b99ac5f-075d-492b-89e5-ae760da5d919">
+                <Name>Retirement</Name>
+
+                <Goal>4</Goal>
+                <PercentageOfSavings>2</PercentageOfSavings>
+                <DecisionMaking>10</DecisionMaking>
+                <Decline>3</Decline>
+                <LossesOrGains>10</LossesOrGains>
+                <ActionOnLosses>10</ActionOnLosses>
+                <HypotheticalProfile>4</HypotheticalProfile>
+                <LossVsGainProfile />
+                <TimeHorizon origin="2021">
+                    <WithdrawTime>4</WithdrawTime>
+                    <Range>
+                        <Min>2025</Min>
+                        <Max>2028</Max>
+                    </Range>
+                </TimeHorizon>
+                <Accounts>
+                    <TFSA/>
+                    <RDSP/>
+                </Accounts>
+                <InitialInvestment>0</InitialInvestment>
+                <MonthlyCommitment>0</MonthlyCommitment>
+                <Recommendation>
+                    <Allocation>Growth</Allocation>
+                    <AllocationOption id="51">Two Fund Option</AllocationOption>
+                    <Composition>
+                        <newcodecode percent="0"/>
+                        <PMO205 percent="40"/>
+                        <EDG500 percent="60"/>
+                    </Composition>
+                </Recommendation>
+                <Meta>
+                    <Icon>dollar</Icon>
+                    <Color>yellow</Color>
+                </Meta>
+            </Profile>
+        </Profiles>
+    </PrimaryClient>
+    <Notes>
+        <kyc_notes>Overall kyc notes.</kyc_notes>
+    </Notes>
+</meeting>

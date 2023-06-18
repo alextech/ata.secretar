@@ -1,0 +1,202 @@
+//@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+
+@import "variables";
+@import "~bootstrap/scss/forms";
+@import "~bootstrap/scss/input-group";
+@import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/button-group";
+$enable-rounded: true;
+@import "~bootstrap/scss/popover";
+$enable-rounded: false;
+
+@import "styleUtils/mixins";
+
+@import "Numeric";
+@import "questionnaire/profile/Objectives";
+@import "questionnaire/profile/Expectations";
+@import "questionnaire/profile/Results";
+@import "questionnaire/profile/NewProfile";
+
+body{
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none;
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+}
+
+.btn-warning:focus,
+.btn-warning:active,
+.btn-warning:not([disabled]):not(.disabled):active:focus, .btn-warning:not([disabled]):not(.disabled).active:focus, .show > .btn-warning.dropdown-toggle:focus{
+  box-shadow: none;
+  outline: none;
+}
+
+#modal input[type="button"] {
+  width:5.5em;
+  height: 2.2em;
+  color: white;
+}
+
+input[type="text"] {
+  @extend .form-control;
+  width: initial;
+  &:focus {
+    box-shadow: none;
+  }
+}
+
+input[type="number"] {
+  text-align: right;
+}
+
+label.disabled {
+  color: $gray-400;
+}
+input:disabled {
+  border-color: $gray-200;
+}
+
+input[type="checkbox"], input[type="checkbox"]:checked {
+  margin-left: 0;
+  opacity: 0;
+
+  + span {
+    margin-left: -1em;
+    padding-right: 1.4em;
+
+    &:after {
+      font-size: 1.2em;
+      margin-left: 0.3em;
+    }
+  }
+}
+input[type="checkbox"] + span::before {
+  @extend .checkboxUnchecked;
+}
+
+input[type="checkbox"]:checked + span::before{
+  @extend .checkboxChecked;
+}
+
+@import "questionnaire/meeting/meeting";
+@import "questionnaire/clientinfo/ClientInfo";
+
+label {
+  font-weight: normal;
+}
+
+body > section {
+  height: 100vh;
+  background: #dbdbdb;
+  display: grid;
+  grid-template-columns: 24em 1fr;
+  grid-template-rows: 2.8em 1fr;
+
+  header {
+    @include shadow();
+    grid-column: 1;
+    background-color: $ata-orange;
+    color: white;
+    height: 100%;
+
+    h1 {
+      font-weight: 500;
+      //font-size: 1.3em;
+      height: 100%;
+      margin: 0.3em 0 0.2em 0.5em;
+    }
+  }
+
+  #sub-nav {
+    @include shadow();
+    grid-column: 2;
+    z-index: 1;
+
+    background-color: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    > div {
+      margin-right: 1em;
+    }
+    padding: 0.5em;
+
+    .btn {
+      margin-left: 0.3em;
+    }
+  }
+
+  nav {
+    grid-column: 1;
+  }
+
+  main {
+    padding: 1em;
+    background-color: #f6f6f6;
+    grid-column: 2;
+
+    > section {
+      height: 100%;
+    }
+  }
+}
+
+
+div .input {
+  height: 30px;
+}
+
+hr {
+  border-top: none;
+  border-bottom: 1px solid #dddddd;
+  margin: 0; // overrides scaffolding
+}
+
+.popover-header {
+  margin-top: 0;
+  font-size: 1em;
+  padding: 0.5rem 0.75rem 0;
+
+  svg {
+    width: 1em;
+    cursor: pointer;
+    float: right;
+
+    path {
+      fill: $gray-600;
+    }
+  }
+}
+
+.popover-body {
+  p:first-child {
+    margin-top: 0;
+  }
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// workaround ::slotted limitation
+// but at same time this does feel more like a "theme" that should be application wide
+ata-percentage-breakdown svg[slot="icons"] path,
+ata-modal svg[slot="icons"] path,
+ata-panel svg[slot="icons"] path {
+  fill: #ffffff;
+}
+
+svg[slot="icons"] {
+  margin-left: 0.4em;
+}

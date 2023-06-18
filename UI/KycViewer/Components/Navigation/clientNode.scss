@@ -1,0 +1,24 @@
+@import "~atauitoolkit/variables";
+
+//@import "../variables";
+@import "mixins";
+
+.viewer-navigation {
+
+  .nav-client-a {
+    @include menuLink(1.25em);
+  }
+
+  @include disabled();
+
+  .nav-client {
+    @include subMenu(2.5em);
+
+  }
+
+  .active {
+    background-color: #c5c5c5;
+    border-left: 3px solid $ata-orange !important;
+  }
+
+}

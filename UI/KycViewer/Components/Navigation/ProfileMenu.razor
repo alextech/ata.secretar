@@ -1,0 +1,57 @@
+@using Ata.Investment.Profile.Domain.Profile
+<li>
+    <a href="@(IsEnabled ? $"{BaseProfileUrl}/expectations" : false)" class="nav-profile-a @(!IsEnabled ? "disabled" : "")">
+        <img src="/_content/KycViewer/icons/@(Profile.Meta.Icon).png" alt="@Profile.Name"/> <span class="nav-profile-name">@Profile.Name</span>
+        <span class="pull-right-container">
+            <i class="fa fa-angle-left @(IsOpened ? "fa-rotate-270" : "") pull-right"></i>
+        </span>
+    </a>
+
+    @if (IsOpened)
+    {
+        <ul class="nav-profile">
+            <li data-name="expectations">
+                <a href="@(IsEnabled ? $"{BaseProfileUrl}/expectations" : false)" class="@(!IsEnabled ? "disabled" : "") @(_isExpectationsActive ? "active" : "")"><i class="fas fa-chart-line"></i> Expectations & Experience</a>
+            </li>
+            <li data-name="results">
+                <a href="@(_isResultsEnabled ? $"{BaseProfileUrl}/results" : false)" class="@(!_isResultsEnabled ? "disabled" : "") @(_isResultsActive ? "active" : "")"><i class="fas fa-chart-bar"></i> Results</a>
+            </li>
+        </ul>
+    }
+</li>
+
+@code {
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [Parameter]
+    public Profile Profile { get; set; }
+
+    [Parameter]
+    public bool IsOpened { get; set; }
+
+    [Parameter]
+    public bool IsEnabled { get; set; }
+
+    [Parameter]
+    public IEnumerable<string> ValidPaths { get; set; } = new List<string>();
+
+    private bool _isResultsEnabled;
+
+    private bool _isExpectationsActive;
+    private bool _isResultsActive;
+
+    private string BaseProfileUrl => $"{QLayout.BaseUrl}#{(!Profile.IsJoint ? $"/client/{Profile.PrimaryClient.Guid}" : "")}/profile/{Profile.Guid}";
+
+    protected override void OnParametersSet()
+    {
+
+        // expectations path is controlled by client info being valid/invalid, and is passed here through IsEnabled
+        // results path is allowed once expectations are valid
+        _isResultsEnabled = ValidPaths.Contains("expectations");
+
+        _isExpectationsActive = IsOpened && QLayout.Page == "expectations";
+        _isResultsActive = IsOpened && QLayout.Page == "results";
+    }
+}

@@ -1,0 +1,27 @@
+@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Points
+
+@code {
+
+    // TODO organize into better tab-like child content.
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public EditContext FormEditContext { get; set; }
+
+    [Parameter]
+    public PClient Client { get; set; }
+
+    protected override void OnInitialized()
+    {
+        UpdatePointsStatus();
+        FormEditContext.OnFieldChanged += (sender, args) => UpdatePointsStatus();
+    }
+
+    private void UpdatePointsStatus()
+    {
+        // QLayout.StatusHolder.SetStatus($"Client points weight: {Client.CalculateWeight()}");
+    }
+}

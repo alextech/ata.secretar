@@ -1,0 +1,32 @@
+@import "styleUtils/effects";
+
+input[type="checkbox"], input[type="checkbox"]:checked,
+input[type="radio"], input[type="radio"]:checked {
+  margin-left: 0;
+  opacity: 0;
+
+  + span {
+    margin-left: -1em;
+    padding-right: 1.4em;
+
+    &:after {
+      font-size: 1.2em;
+      margin-left: 0.3em;
+    }
+  }
+}
+input[type="checkbox"] + span::before {
+  @extend .checkboxUnchecked;
+}
+
+input[type="checkbox"]:checked + span::before{
+  @extend .checkboxChecked;
+}
+
+input[type="radio"] + span::before {
+  @extend .radioUnchecked
+}
+
+input[type="radio"]:checked + span::before {
+  @extend .radioChecked
+}

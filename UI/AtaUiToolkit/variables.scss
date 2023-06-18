@@ -1,0 +1,30 @@
+$ata-orange: #ea9439;
+$ata-blue: #1879C3;
+$ata-green: #28a745;
+
+$theme-colors: (
+  warning: $ata-orange,
+  secondary: #ced4da
+);
+
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+
+$font-family-base : "Open Sans", sans-serif;
+$font-size-base: 0.9rem;
+$input-border-color: $gray-600;
+$input-disabled-bg: $gray-100;
+
+$input-padding-y: 0.275em;
+$input-padding-x: 0.5em;
+$enable-rounded: false;
+$enable-gradients: true;
+$enable-shadows: true;
+
+$popover-max-width: 35em;
+
+
+$font-family-sans-serif: "Open Sans", sans-serif;
+$btn-disabled-opacity: 0.4;
+$btn-focus-box-shadow: none !important;
+$btn-active-box-shadow: none !important;

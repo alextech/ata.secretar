@@ -1,0 +1,47 @@
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.KYC
+@using MediatR
+@using SharedKernel
+@using Ata.Investment.Profile.Cmd.Advisors
+
+@inject IMediator MediatR
+
+<select value="@_advisor" @onchange="@_onAdvisorSelectionChanged" disabled="@Disabled">
+    <option value="@Guid.Empty"></option>
+    @foreach (Advisor advisor in _advisors)
+    {
+        <option value="@advisor.Guid">@advisor.Name</option>
+    }
+</select>
+
+@code {
+    private IEnumerable<Advisor> _advisors = new List<Advisor>();
+    private Guid _advisor;
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public Guid Advisor { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> AdvisorChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _advisor = Advisor;
+    }
+
+    private async Task _onAdvisorSelectionChanged(ChangeEventArgs args)
+    {
+        await AdvisorChanged.InvokeAsync(Guid.Parse(args?.Value?.ToString()!));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!_advisors.Any())
+        {
+            _advisors = await MediatR.Send(new AllAdvisorsQuery());
+        }
+    }
+}

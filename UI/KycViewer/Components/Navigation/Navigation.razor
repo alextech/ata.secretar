@@ -1,0 +1,159 @@
+@using SharedKernel
+@using Ata.Investment.Profile.Domain
+@using Ata.Investment.Profile.Domain.KYC
+@using Ata.Investment.Profile.Domain.Profile
+@using System.Threading
+@using System.Diagnostics
+@namespace KycViewer.Components.Navigation
+
+@inject NavigationManager NavigationManager
+
+<nav class="viewer-navigation">
+    <ul class="sidebar-menu" data-widget="tree">
+        <CascadingValue Value="SelectedProfileId">
+        <li class="@(_isActive ? "active" : "")"><a href="@QLayout.BaseUrl"><i class="far fa-handshake"></i> <span>Meeting Details</span></a></li>
+        @{
+            string primaryGuid = KycDocument.PrimaryClient.Guid.ToString();
+            int guidPosition = 45; // length of /client+guid substring
+        }
+        <ClientMenu
+            Client="@KycDocument.PrimaryClient"
+            ValidPaths="@(ValidPaths.Where(p => p.Contains(primaryGuid)).Select(p => p.Substring(guidPosition)))"
+            IsOpened="@(SelectedClientId == KycDocument.PrimaryClient.Guid)"
+            IsMeetingCompleted="@Meeting.IsCompleted"
+            OnNewProfileSelected="@((e) => OnNewProfileSelected.InvokeAsync(e))"
+        />
+
+        @if (KycDocument.IsJoint)
+        {
+            System.Diagnostics.Debug.Assert(KycDocument.JointClient != null, "KycDocument.JointClient != null");
+            string jointGuid = KycDocument.JointClient.Guid.ToString();
+            <ClientMenu
+                ValidPaths="@(ValidPaths.Where(p => p.Contains(jointGuid)).Select(p => p.Substring(guidPosition)))"
+                Client="@KycDocument.JointClient"
+                IsOpened="@(SelectedClientId == KycDocument.JointClient.Guid)"
+                IsMeetingCompleted="@Meeting.IsCompleted"
+                OnNewProfileSelected="@((e) => OnNewProfileSelected.InvokeAsync(e))"
+            />
+
+
+            <li id="nav-joint-profiles" class="treeview">
+                <a class="@(_isJointDisabled ? "disabled" : "")"><i class="fas fa-users"></i> <span>Joint Profiles</span>
+                    <span class="pull-right-container">
+                        <i class="fa fa-angle-left pull-right"></i>
+                    </span>
+                </a>
+
+                <ul class="joint-submenu">
+                    @foreach (Profile profile in KycDocument.JointProfiles)
+                    {
+                        string profileGuid = profile.Guid.ToString();
+
+                        <ProfileMenu
+                            Profile="@profile"
+                            IsOpened="@(SelectedProfileId == profile.Guid)"
+                            IsEnabled="@(!_isJointDisabled)"
+                            ValidPaths="@(ValidPaths.Where(p => p.Contains(profileGuid)).Select(p => p.Substring(guidPosition+1)))"
+                        />
+                    }
+                    @if (!Meeting.IsCompleted)
+                    {
+                        <li><a @onclick="OnNewJointProfileClicked" class="@(_isJointDisabled ? "disabled" : "")"><i class="fas fa-plus"></i> Add Joint Profile</a></li>
+                    }
+                </ul>
+            </li>
+        }
+        </CascadingValue>
+    </ul>
+</nav>
+@code
+{
+
+    [CascadingParameter]
+    public KycDocument KycDocument { get; set; }
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [Parameter]
+    public EventCallback<NewProfileSelectionEvent> OnNewProfileSelected { get; set; }
+
+    [Parameter]
+    public Guid SelectedClientId { get; set; }
+
+    [Parameter]
+    public Guid SelectedProfileId { get; set; }
+
+    [Parameter]
+    public IEnumerable<string> ValidPaths { get; set; } = new List<string>();
+
+    private bool _isJointDisabled;
+
+    private bool IsJoint => KycDocument.IsJoint;
+
+    private bool _isActive;
+
+    protected override void OnInitialized()
+    {
+        ValidPaths = QLayout.ValidationObserver.ValidPaths;
+    }
+
+    protected override void OnParametersSet()
+    {
+        SetJointState();
+
+        _isActive = SelectedClientId == Guid.Empty && SelectedProfileId == Guid.Empty;
+    }
+
+    private void SetJointState()
+    {
+        if (IsJoint)
+        {
+            Debug.Assert(KycDocument.JointClient != null, "KycDocument.JointClient != null");
+            string pClientId = KycDocument.PrimaryClient.Guid.ToString();
+            string jClientId = KycDocument.JointClient.Guid.ToString();
+
+            _isJointDisabled = !(ValidPaths.Any(p => p.Contains(pClientId)) && ValidPaths.Any(p => p.Contains(jClientId)));
+        }
+    }
+
+    private void OnNewJointProfileClicked(MouseEventArgs e)
+    {
+        if (_isJointDisabled) return;
+
+        OnNewProfileSelected.InvokeAsync(new NewProfileSelectionEvent()
+        {
+            IsJoint = true,
+            From = DateTimeOffset.Now.Year + 10,
+            To = DateTimeOffset.Now.Year +10
+        });
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        DocumentValidationObserver validationObserver = QLayout.ValidationObserver;
+
+        validationObserver.OnValidPathsChanged += ValidPathsChangedHandler;
+    }
+
+    private void ValidPathsChangedHandler(object sender, EventArgs eventArgs)
+    {
+
+        DocumentValidationObserver validationObserver = sender as DocumentValidationObserver;
+        Debug.Assert(validationObserver != null, nameof(validationObserver) + " != null");
+
+        ValidPaths = validationObserver.ValidPaths;
+        SetJointState();
+        StateHasChanged();
+    }
+
+    public void SyncUI()
+    {
+        StateHasChanged();
+    }
+}

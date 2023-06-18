@@ -1,0 +1,152 @@
+@using MediatR
+@using Microsoft.JSInterop
+@using Ata.Investment.Profile.Domain
+@using System.Diagnostics
+@using Ata.Investment.Profile.Cmd.Profile
+
+@implements IDisposable
+
+@inject IJSRuntime JSRuntime;
+@inject NavigationManager NavigationManager
+@inject IMediator MediatR
+
+@* Maybe consider making active when navigated to a profile to give option to delete *@
+@* <input type="button" class="btn btn-danger" value="Delete" @onclick="@(() => _removeProfileModal.Open())" /> *@
+
+<span>Viewing as @QLayout.ViewMode</span>
+
+<span class="separator"></span>
+
+@if (!Meeting.IsCompleted)
+{
+    <button class="btn btn-primary" @onclick="@SaveMeeting"><i class="fas fa-save"></i> Save</button>
+}
+
+@if (QLayout.ProfileId != Guid.Empty && Meeting.IsCompleted)
+{
+    <button class="btn btn-primary" disabled="@(!_canPrint)" @onclick="@RequestPdf"><i class="fas fa-print"></i> PDF</button>
+}
+
+@if (!Meeting.IsCompleted)
+{
+    <button class="btn btn-success" @onclick="@(() => _confirmCompleteModal.Open())" disabled="@(!_canComplete)"><i class="fas fa-clipboard-check"></i> Complete</button>
+
+    <Modal Title="Confirm end meeting and submit profile" ModalType="@ModalType.YesNo" YesHandler="@Complete" @ref="@_confirmCompleteModal">
+        Confirm completing profile. Once completed, cannot be edited - only viewed.
+    </Modal>
+}
+
+@if (Meeting.IsCompleted)
+{
+    <button class="btn btn-primary" @onclick="@(() => _confirmEmailModal.Open())"><i class="fas fa-at"></i> Email</button>
+
+    <Modal Title="Confirm email" ModalType="@ModalType.YesNo" YesHandler="@Email" @ref="@_confirmEmailModal">
+        Confirm sending all profiles created in this meeting to emails:
+        <ul>
+            <li>@Meeting.KycDocument.PrimaryClient.Email</li>
+            @if (@Meeting.KycDocument.IsJoint)
+            {
+                <li>@Meeting.KycDocument.JointClient?.Email</li>
+            }
+            <li>@Meeting.KycDocument.Advisor.Email</li>
+        </ul>
+    </Modal>
+}
+
+<Modal Title="Draft operation" ModalType="@ModalType.SuccessOK" @ref="@_resultModal">
+    @_resultMessage
+</Modal>
+
+
+@code {
+
+    [CascadingParameter]
+    public QuestionnaireLayout QLayout { get; set; }
+
+    [CascadingParameter]
+    public Meeting Meeting { get; set; }
+
+    [Parameter]
+    public Guid ProfileId { get; set; }
+
+    private Modal _confirmCompleteModal;
+
+    private Modal _confirmEmailModal;
+
+    private Modal _resultModal;
+
+    private string _resultMessage;
+
+    private bool _canComplete;
+
+    private bool _canPrint;
+
+    private string PdfLink => $"/meeting/{Meeting.Guid}/profile/{QLayout.ProfileId}/pdf";
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        QLayout.ValidationObserver.OnValidationStateChanged += OnValidationStateChanged;
+    }
+
+    private void OnValidationStateChanged(object? sender, bool isValid)
+    {
+        ToggleCanSubmit(isValid);
+
+        StateHasChanged();
+    }
+
+    protected override void OnParametersSet()
+    {
+        _canPrint = _canComplete || Meeting.IsCompleted;
+    }
+
+    private async Task RequestPdf() {
+        if (!Meeting.IsCompleted)
+        {
+            await QLayout.SaveManagedMeeting();
+        }
+
+        await JSRuntime.InvokeVoidAsync("uiUtils.openNewTab", PdfLink);
+    }
+
+    private async Task SaveMeeting()
+    {
+        _resultMessage = "Saving meeting...";
+        _resultModal.Open();
+
+        await QLayout.SaveManagedMeeting();
+
+        _resultMessage = "Meeting saved";
+    }
+
+    private async Task Complete()
+    {
+        await QLayout.SaveManagedMeeting();
+        await MediatR.Send(new CompleteMeetingCommand(Meeting.Guid));
+
+        NavigationManager.NavigateTo($"/meeting/{Meeting.Guid}", true);
+    }
+
+    private async Task Email()
+    {
+        _confirmEmailModal.Close();
+        await MediatR.Send(new EmailMeetingCommand(Meeting.Guid));
+    }
+
+    private void ToggleCanSubmit(bool canSubmit)
+    {
+        _canComplete = canSubmit;
+        _canPrint = canSubmit;
+    }
+
+    public void Dispose()
+    {
+        if (QLayout.ValidationObserver != null)
+        {
+            QLayout.ValidationObserver.OnValidationStateChanged -= OnValidationStateChanged;
+        }
+    }
+
+}
