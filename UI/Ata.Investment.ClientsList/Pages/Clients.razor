@@ -1,11 +1,11 @@
 ﻿@page "/"
-@page "/clients"
-@page "/clients/{ClientID:guid}"
-@page "/clients/{ClientID:guid}/profiles"
-@page "/clients/{ClientID:guid}/profiles/{Year:int}"
+@page "/features"
+@page "/features/{FeatureId:guid}"
+@page "/features/{FeatureId:guid}/profiles"
 @attribute [Authorize]
 
 @using System.Globalization
+@using Ata.DeloSled.FeatureTracker.Domain
 @using AutoMapper
 @using MediatR
 @using Microsoft.AspNetCore.Authorization
@@ -19,17 +19,18 @@
 @inject IMediator MediatR;
 @inject NavigationManager NavigationManager
 
+@* TODO Сделать компонент панели инструментов *@
 <section class="sub-nav">
     @{
-        bool loaded = _isHouseholdLoaded;
+        bool loaded = _itemsLoaded;
     }
 
-    <button value="New Client" disabled="@(!loaded)" class="btn btn-primary" @onclick="@BeginCreatingHousehold"><i class="fas fa-user-plus"></i> New Household</button>
-    <button value="Archive Selected" disabled="@(_household is not { IsActive: true })" class="btn btn-danger" @onclick="@BeginArchiveHousehold"><i class="fas fa-archive"></i> Archive Selected</button>
+    <button value="New Feature" disabled="@(!loaded)" class="btn btn-primary" @onclick="@BeginCreatingHousehold"><i class="fas fa-user-plus"></i> New Feature</button>
+    <button value="Archive Selected" disabled="@(_workItem is not { IsActive: true })" class="btn btn-danger" @onclick="@BeginArchiveHousehold"><i class="fas fa-archive"></i> Archive Selected</button>
     <Feature Name="Scheduler">
-        <button value="Scheduler" disabled="@(_household is not {IsActive: true})" class="btn btn-primary" @onclick="@BeginScheduleClient"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
+        <button value="Scheduler" disabled="@(_workItem is not {IsActive: true})" class="btn btn-primary" @onclick="@BeginScheduleClient"><i class="fas fa-calendar-alt"></i> Schedule Meeting</button>
     </Feature>
-    @if (_household is { IsActive: false })
+    @if (_workItem is { IsActive: false })
     {
         <button value="Restore Selected" class="btn btn-primary" @onclick="@BeginRestoreHousehold"><i class="fas fa-undo"></i> Restore Selected</button>
         <button value="Remove Permanently" class="btn btn-danger" @onclick="@BeginRemoveHousehold"><i class="fas fa-trash-alt"></i> Remove Permanently</button>
@@ -47,7 +48,7 @@
 
 <main id="clientsList">
 
-@if (!_isHouseholdLoaded)
+@if (!_itemsLoaded)
 {
     <section class="modal show-modal" style="display: flex; align-items: center;">
         <div class="modal-content loading"><img src="@(CommonPaths.LoadingGif)" alt="loading"/></div>
@@ -55,70 +56,34 @@
 }
 
 <section id="clientsListTable">
-    <table class="@(!_clientsLoaded ? "isLoading" : "")">
+    <table>
         <thead>
         <tr>
-            <th>Primay Client Name</th>
-            <th>Email</th>
-            <th>Joint Client Name</th>
-            <th class="lastEmailColumn">Email</th>
-            <th>Status <i class="fas fa-filter" @onclick="@(() => _isStatusFilterOpened = !_isStatusFilterOpened)"></i>
-                <div class="dropdown-menu @(_isStatusFilterOpened ? "show" : "")">
-                    <ul>
-                        <li><label><input type="checkbox" checked="@_filterIsActive" @onchange="@(() => _filterIsActive = !_filterIsActive)" /> Active</label></li>
-                        <li><label><input type="checkbox" checked="@_filterIsArchived" @onchange="@(() => _filterIsArchived = !_filterIsArchived)" /> Archived</label></li>
-                    </ul>
-                    <button class="btn btn-success" @onclick="@ApplyStatusFilter">OK</button>
-                </div>
-            </th>
+            @* Динамически создать колонки по типу ДТО *@
+            <th>Название</th>
+            <th>Статус</th>
         </tr>
         </thead>
         <tbody>
-        @foreach (Household household in _householdsList)
+        @foreach (WorkItem workItem in _featuresList)
         {
-            Client primaryClient = household.PrimaryClient;
-            Client jointClient = household.JointClient;
-
-            string householdUrl = $"/clients/{primaryClient.Guid}?{UrlSuffix}";
-
-            <tr class='@(primaryClient.Guid == ClientID ? "selected" : "")'>
-                <td class="client-name-column"><a href="@householdUrl">@primaryClient.Name</a></td>
-                <td><a href="@householdUrl">@primaryClient.Email</a></td>
-
-                <td class="client-name-column"><a href="@householdUrl">@jointClient?.Name &nbsp;</a></td>
-                <td class="lastEmailColumn"><a href="@householdUrl">@jointClient?.Email &nbsp;</a></td>
-                <td>
-                    @if (household.IsActive)
-                    {
-                        <span><i class="fas fa-check-circle is-active"></i> Active</span>
-                    }
-                    else
-                    {
-                        <span><i class="fas fa-archive is-archived"></i> Archived</span>
-                    }
-                </td>
+            <tr>
+                <td>@workItem.Title</td>
+                <td>@workItem.State.DisplayName</td>
             </tr>
         }
     </tbody>
     </table>
-    @* @if (!_clientsLoaded) *@
-    @* { *@
-    @*     <img src="@(CommonPaths.LoadingGif)" style="margin-left: 41%; margin-top: 9%" alt="loading"/> *@
-    @* } *@
 </section>
 
-@if (_household != null)
+@if (_workItem != null)
 {
+    <!-- MASTER COMPONENT --> 
     <section id="clientInfo">
         <section class="clientInfoDetails" style="grid-area: primaryClient;">
             <div>
                 <h3 class="householdMemberName">@_selectedPrimaryClient.Name</h3>
                 <i class="fas fa-pencil-alt" @onclick="@(() => BeginEditClientDialogue(_selectedPrimaryClient))"></i>
-                @if (_household.IsJoint)
-                {
-                    <i class="fas fa-user-minus" @onclick="@(() => BeginRemoveFromHousehold(_selectedPrimaryClient.Guid))"></i>
-                }
-                <br/>
             </div>
             <div>Email: <span>@_selectedPrimaryClient.Email</span></div>
             <div>Date of Birth: <span>@_selectedPrimaryClient.DateOfBirth.ToString("MMMM dd, yyyy", new CultureInfo("en-US"))</span></div>
@@ -147,13 +112,22 @@
 
         </section>
     </section>
-
-    <MeetingsArea Household="@_household" BaseUrl="@_baseUrl" Year="@Year" />
+    
+    <!-- TODO DETAIL COMPONENT -->
+    @* <MeetingsArea Household="@_workItem" /> *@
 }
+
+<section id="client_info">
+    <select>
+        <option>New</option>
+        <option>Active</option>
+        <option>Closed</option>
+    </select>
+</section>
 </main>
 
 <ClientEditorModal OnValidSubmit="@((Client c) => _clientValidSubmitHandler(c))" @ref="@_clientDialogue" />
-<ScheduleMeetingModal @ref="@_newScheduleDialogue" HouseholdId="@_household?.Guid"/>
+<ScheduleMeetingModal @ref="@_newScheduleDialogue" HouseholdId="@_workItem?.Guid"/>
 <Modal Title="Confirm removal" ModalType="@ModalType.YesNo" YesHandler="@RemoveClientFromHousehold" @ref="@_clientRemoveDialogue">
     Confirm removing @_clientNameToRemove from household?
 </Modal>
@@ -184,10 +158,11 @@
     //
     // ----------------------
     
-    private IEnumerable<Household> _householdsList = new List<Household>();
+    // TODO Использовать общий тип EntityDTO
+    private IEnumerable<WorkItem> _featuresList = new List<WorkItem>();
 
     #nullable enable
-    private Household? _household;
+    private WorkItem? _workItem;
     #nullable restore
 
     private ClientVM _selectedPrimaryClient = new ClientVM();
@@ -200,9 +175,7 @@
 
     private string _baseUrl;
 
-    private bool _clientsLoaded;
-
-    private bool _isHouseholdLoaded;
+    private bool _itemsLoaded;
 
     private bool _isStatusFilterOpened;
 
@@ -216,27 +189,22 @@
                 "isActive=" + (_filterIsActive ? "true" : "false") + "&" +
                 "isArchived=" + (_filterIsArchived ? "true" : "false");
 
-    [Parameter]
-    public DateTime AsOf { get; set; }
-
-    [Parameter]
-    public int Year { get; set; }
     
     [Parameter]
-    public Guid ClientID { get; set; }
+    public Guid FeatureID { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         NavigationManager.LocationChanged += HandleViewModeChanged;
         ParseClientsFilter();
 
-        _householdsList = await MediatR.Send(new HouseholdsQuery()
+        _featuresList = new List<WorkItem>()
         {
-            IsActive = _filterIsActive,
-            IsArchived = _filterIsArchived
-        });
-        _clientsLoaded = true;
-        _isHouseholdLoaded = true;
+            new WorkItem("Бизнес Справочник") { StateId = StateEnum.New },
+            new WorkItem("Статусы документов") { StateId = StateEnum.New },
+            new WorkItem("Опросник") { StateId = StateEnum.Active }
+        };
+        _itemsLoaded = true;
     }
 
     private void HandleViewModeChanged(object sender, LocationChangedEventArgs e)
@@ -260,18 +228,18 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (ClientID != Guid.Empty)
+        if (FeatureID != Guid.Empty)
         {
-            _isHouseholdLoaded = false;
+            _itemsLoaded = false;
             await FetchRequestedClientHousehold();
-            _isHouseholdLoaded = true;
+            _itemsLoaded = true;
         }
         else
         {
-            _household = null;
+            _workItem = null;
         }
 
-        _baseUrl = "/clients/" + ClientID;
+        _baseUrl = "/clients/" + FeatureID;
     }
 
     private async Task HandleUserSearch(ChangeEventArgs e)
@@ -280,13 +248,8 @@
 
         if (string.IsNullOrEmpty(value))
         {
-            _clientsLoaded = false;
-            _householdsList = await MediatR.Send(new HouseholdsQuery()
-            {
-                IsActive = _filterIsActive,
-                IsArchived = _filterIsArchived,
-            });
-            _clientsLoaded = true;
+            // TODO фильтр по колонкам
+            // _featuresList = await MediatR.Send();
             return;
         }
 
@@ -295,13 +258,8 @@
             return;
         }
 
-        _clientsLoaded = false;
-        _householdsList = await MediatR.Send(new HouseholdsQuery() {
-            ClientName = value,
-            IsActive = _filterIsActive,
-            IsArchived = _filterIsArchived,
-        });
-        _clientsLoaded = true;
+        // TODO фильтр по колонкам
+        // _featuresList = await MediatR.Send(new HouseholdsQuery());
     }
 
     // ===== Delegate Event Handlers ===============
@@ -339,26 +297,16 @@
     {
         _householdNameToArchive = _selectedPrimaryClient.Name;
 
-        if (_household.IsJoint)
-        {
-            _householdNameToArchive += " and " + _selectedJointClient.Name;
-        }
-
         _householdArchiveDialogue.Open();
-        _householdIdToArchive = _household.Guid;
+        _householdIdToArchive = _workItem.Guid;
     }
 
+    // TODO корзина сущностей
     private void BeginRestoreHousehold(MouseEventArgs e)
     {
         _householdNameToArchive = _selectedPrimaryClient.Name;
 
-        if (_household.IsJoint)
-        {
-            _householdNameToArchive += " and " + _selectedJointClient.Name;
-        }
-
         _householdRestoreDialogue.Open();
-        _householdIdToRestore = _household.Guid;
     }
 
     // household name to delete can share with archive
@@ -366,13 +314,8 @@
     {
         _householdNameToArchive = _selectedPrimaryClient.Name;
 
-        if (_household.IsJoint)
-        {
-            _householdNameToArchive += " and " + _selectedJointClient.Name;
-        }
-
         _householdRemoveDialogue.Open();
-        _householdIdToArchive = _household.Guid;
+        _householdIdToArchive = _workItem.Guid;
     }
 
     private void BeginScheduleClient(MouseEventArgs e)
@@ -384,34 +327,29 @@
     // ======== Perform Actions ===================
     private async Task CreateHouseholdWithClient(Client client)
     {
-        _clientsLoaded = false;
         Household newHousehold = new Household(client);
         await MediatR.Send(new CreateHouseholdCommand(newHousehold));
 
         await SyncUI();
-        _clientsLoaded = true;
         NavigationManager.NavigateTo($"/clients/{client.Guid}");
     }
 
     private async Task AddClientToHousehold(Client client)
     {
-        _clientsLoaded = false;
-        _household.AddMember(client);
+        // TODO Выполнение после валидации из формы всплывающего окна.
         _selectedJointClient = Mapper.Map<ClientVM>(client);
 
-        await MediatR.Send(new AddToHouseholdCommand(_household.Guid, client));
+        await MediatR.Send(new AddToHouseholdCommand(_workItem.Guid, client));
 
-        _clientsLoaded = true;
         await SyncUI();
     }
 
     private Guid _clientIdToRemove;
     private async Task RemoveClientFromHousehold()
     {
-        _clientsLoaded = false;
-        _household.RemoveMember(_clientIdToRemove);
 
-        await MediatR.Send(new RemoveFromHouseholdCommand(_household.Guid, _clientIdToRemove));
+        // корзина
+        await MediatR.Send(new RemoveFromHouseholdCommand(_workItem.Guid, _clientIdToRemove));
 
         if (_selectedJointClient.Guid == _clientIdToRemove)
         {
@@ -425,57 +363,36 @@
         }
 
         await SyncUI();
-        _clientsLoaded = true;
     }
 
     private async Task UpdateClient(Client client)
     {
-        _clientsLoaded = false;
         await MediatR.Send(new UpdateClientCommand(client.Guid, client));
         await FetchRequestedClientHousehold();
         await SyncUI();
-        _clientsLoaded = true;
     }
 
     private async Task SyncUI()
     {
-        _clientsLoaded = false;
-        _householdsList = await MediatR.Send(new HouseholdsQuery() {
-            ClientName = _currentSearchString,
-            IsActive = _filterIsActive,
-            IsArchived = _filterIsArchived,
-        });
-        _clientsLoaded = true;
+        // _featuresList = await MediatR.Send();
         StateHasChanged();
     }
 
     private async Task FetchRequestedClientHousehold()
     {
-        _household = await MediatR.Send(new HouseholdByClientIdQuery(ClientID));
-        if (_household == null)
+        // _workItem = await MediatR.Send(new HouseholdByClientIdQuery(FeatureID));
+        if (_workItem == null)
         {
             NavigationManager.NavigateTo("/clients");
             return;
         }
         
-        _selectedPrimaryClient = Mapper.Map<ClientVM>(_household.PrimaryClient);
-
-        if (_household.IsJoint)
-        {
-            _selectedJointClient = Mapper.Map<ClientVM>(_household.JointClient);
-        }
-        else
-        {
-            _selectedJointClient = new ClientVM();
-        }
-
-        _baseUrl = "/clients/" + ClientID;
+        _baseUrl = "/clients/" + FeatureID;
     }
 
     private Guid _householdIdToArchive;
     private async Task ArchiveHousehold()
     {
-        _clientsLoaded = false;
 
         await MediatR.Send(new ArchiveHouseholdCommand(_householdIdToArchive));
         _householdIdToArchive = Guid.Empty;
@@ -487,7 +404,6 @@
     private Guid _householdIdToRestore;
     private async Task RestoreHousehold()
     {
-        _clientsLoaded = false;
 
         await MediatR.Send(new RestoreHouseholdCommand(_householdIdToRestore));
         _householdIdToRestore = Guid.Empty;
@@ -498,7 +414,6 @@
 
     private async Task RemoveHousehold()
     {
-        _clientsLoaded = false;
 
         await MediatR.Send(new RemoveHouseholdCommand(_householdIdToArchive));
         _householdIdToArchive = Guid.Empty;

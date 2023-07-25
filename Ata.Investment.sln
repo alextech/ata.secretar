@@ -84,6 +84,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ata.Investment.Schedule.Cmd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ata.Investment.Schedule.Application", "BC_Schedule\Ata.Investment.Schedule.Application\Ata.Investment.Schedule.Application.csproj", "{20C659AC-8F2D-4312-8A49-535DBADE0793}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ata.DeloSled.FeatureTracker.Domain", "BC_FeatureTracker\Ata.DeloSled.FeatureTracker.Domain\Ata.DeloSled.FeatureTracker.Domain.csproj", "{E9E744DA-CB78-4F44-BDC3-F2D1DF9F82A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -202,6 +204,10 @@ Global
 		{20C659AC-8F2D-4312-8A49-535DBADE0793}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20C659AC-8F2D-4312-8A49-535DBADE0793}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20C659AC-8F2D-4312-8A49-535DBADE0793}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9E744DA-CB78-4F44-BDC3-F2D1DF9F82A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9E744DA-CB78-4F44-BDC3-F2D1DF9F82A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9E744DA-CB78-4F44-BDC3-F2D1DF9F82A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9E744DA-CB78-4F44-BDC3-F2D1DF9F82A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

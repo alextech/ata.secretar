@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Allocation\Ata.Investment.Allocation.Cmd\Ata.Investment.Allocation.Cmd.csproj" />
+    <ProjectReference Include="..\..\BC_FeatureTracker\Ata.DeloSled.FeatureTracker.Domain\Ata.DeloSled.FeatureTracker.Domain.csproj" />
     <ProjectReference Include="..\..\BC_History\History.Cmd\History.Cmd.csproj" />
     <ProjectReference Include="..\..\BC_Schedule\Ata.Investment.Schedule.Cmd\Ata.Investment.Schedule.Cmd.csproj" />
     <ProjectReference Include="..\..\Profile\Ata.Investment.Profile.Cmd\Ata.Investment.Profile.Cmd.csproj" />
