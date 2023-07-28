@@ -24,6 +24,8 @@
     @{
         bool loaded = _itemsLoaded;
     }
+    
+    <ata-glossary-lookup />
 
     <button value="New Feature" disabled="@(!loaded)" class="btn btn-primary" @onclick="@BeginCreatingHousehold"><i class="fas fa-user-plus"></i> New Feature</button>
     <button value="Archive Selected" disabled="@(_workItem is not { IsActive: true })" class="btn btn-danger" @onclick="@BeginArchiveHousehold"><i class="fas fa-archive"></i> Archive Selected</button>
@@ -118,11 +120,18 @@
 }
 
 <section id="client_info">
-    <select>
-        <option>New</option>
-        <option>Active</option>
-        <option>Closed</option>
-    </select>
+    @* <LookupDropdown urlSource="/api/WorkItemType" /> *@
+    @* <LookupDropdown storeType="Status" /> *@
+    @* *@
+    @* <WorkItemList /> *@
+    @* <StatusList/> *@
+    
+    <ata-glossary-lookup
+        sourceUrl="/WorkItemGlossary"
+        collectionKey="$values"
+        valueKey="id"
+        displayKey="displayName"
+    ></ata-glossary-lookup>
 </section>
 </main>
 

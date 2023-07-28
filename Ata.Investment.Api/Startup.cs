@@ -183,6 +183,12 @@ namespace Ata.Investment.Api
                     new {controller = "PdfRequest", action = "DownloadQuickViewPdf"}
                 );
 
+                endpoints.MapControllerRoute(
+                    "glossaryTest",
+                        "/WorkItemGlossary",
+                    new { controller = "WorkItemGlossary", action = "Get" }
+                );
+
                 // understand authenticaiton & authorization better here https://docs.microsoft.com/ru-ru/aspnet/core/web-api/route-to-code?view=aspnetcore-5.0
                 endpoints.MapPost(
                     "/rpc",

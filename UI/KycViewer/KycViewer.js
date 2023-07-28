@@ -11,3 +11,4 @@ import 'atauitoolkit/Percentage';
 import 'atauitoolkit/Numeric';
 import 'atauitoolkit/Chart/AllocationChart'
 import 'atauitoolkit/RichEditor';
+import 'atauitoolkit/GlossaryLookup';
