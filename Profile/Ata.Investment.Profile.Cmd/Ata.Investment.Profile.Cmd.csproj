@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Ata.Investment.Profile.Domain\Ata.Investment.Profile.Domain.csproj" />
+    <ProjectReference Include="..\..\BC_FeatureTracker\Ata.DeloSled.FeatureTracker.Domain\Ata.DeloSled.FeatureTracker.Domain.csproj" />
   </ItemGroup>
 
 </Project>

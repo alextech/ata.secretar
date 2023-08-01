@@ -29,10 +29,12 @@ export default class GlossaryLookup extends HTMLElement {
         switch (attribute) {
             case 'sourceurl':
                 this.selectNode.innerHTML = '';
-                const response = await fetch(newValue)
-                // TODO 1) move to connectedCallback
-                // TODO 2) add lazy loading attribute true/false - load only on dropdown
-                const items = await response.json();
+                // const response = await fetch(newValue)
+                // // TODO 1) move to connectedCallback
+                // // TODO 2) add lazy loading attribute true/false - load only on dropdown
+                // const items = await response.json();
+                
+                const items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
                 
                 const optionsFragment = document.createDocumentFragment();
                 

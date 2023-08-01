@@ -1,0 +1,20 @@
+﻿@using Microsoft.JSInterop
+@using MediatR
+
+@inject IJSRuntime JSRuntime;
+@inject IMediator MediatR
+
+@code {
+
+    private DotNetObjectReference<WorkItemStore> _workStoreRef;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _workStoreRef = DotNetObjectReference.Create(new WorkItemStore(MediatR));
+        await JSRuntime.InvokeAsync<string>(
+            "uiUtils.registerDataStore",
+            _workStoreRef
+        );
+    }
+
+}

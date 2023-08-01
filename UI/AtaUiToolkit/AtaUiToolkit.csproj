@@ -25,6 +25,7 @@
 
 
     <ItemGroup>
+      <ProjectReference Include="..\..\BC_FeatureTracker\Ata.DeloSled.FeatureTracker.Domain\Ata.DeloSled.FeatureTracker.Domain.csproj" />
       <ProjectReference Include="..\..\Profile\Ata.Investment.Profile.Cmd\Ata.Investment.Profile.Cmd.csproj" />
       <ProjectReference Include="..\..\Ata.Investment.Profile.Domain\Ata.Investment.Profile.Domain.csproj" />
     </ItemGroup>

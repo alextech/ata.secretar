@@ -123,3 +123,12 @@ export function registerTimelineItemBridge(timelineItemInstance) {
         );
     });
 }
+
+let dataStore;
+export function registerDataStore(dataStoreInstance) {
+    dataStore = dataStoreInstance;
+}
+
+export function getDataStore() {
+    return dataStore;
+}
