@@ -113,11 +113,17 @@ export default {
           //     content: [],
           //   }
           // },
-          'css-loader?sourceMap',
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: true
+            }
+          },
           // 'postcss-loader',
           {
-            loader: 'sass-loader?sourceMap',
+            loader: 'sass-loader',
             options: {
+                sourceMap: true,
                 implementation: require('sass')
             }
           }
