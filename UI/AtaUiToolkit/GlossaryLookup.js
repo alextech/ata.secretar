@@ -20,7 +20,7 @@ export default class GlossaryLookup extends HTMLElement {
     }
     
     connectedCallback() {
-        
+        this.selectNode.addEventListener('focus', this.#fetchDictionary.bind(this));
     }
 
     async attributeChangedCallback(attribute, oldValue, newValue) {
@@ -28,34 +28,43 @@ export default class GlossaryLookup extends HTMLElement {
 
         switch (attribute) {
             case 'sourceurl':
-                this.selectNode.innerHTML = '';
-                // const response = await fetch(newValue)
-                // // TODO 1) move to connectedCallback
-                // // TODO 2) add lazy loading attribute true/false - load only on dropdown
-                // const items = await response.json();
                 
-                const items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
-                
-                const optionsFragment = document.createDocumentFragment();
-                
-                const valueKey = this.valueKey;
-                const displayKey = this.displayKey;
-                for (const item of items[this.getAttribute('collectionkey')]) {
-                    
-                    // <option value="valueKey">displayKey</option>
-                    const optionNode = document.createElement('option');
-                    optionNode.value = item[valueKey];
-                    optionNode.innerHTML = item[displayKey];
-                    
-                    optionsFragment.append(optionNode);
-                }
-
-                this.selectNode.replaceChildren(optionsFragment);
 
                 break;
             default:
                 return;
         }
+    }
+    
+    async #fetchDictionary() {
+        // const response = await fetch(newValue)
+        // // TODO 1) move to connectedCallback
+        // // TODO 2) add lazy loading attribute true/false - load only on dropdown
+        // const items = await response.json();
+
+        let items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
+
+        const optionsFragment = document.createDocumentFragment();
+
+        const valueKey = this.valueKey;
+        const displayKey = this.displayKey;
+        
+        if (this.hasAttribute('collectionkey')) {
+            const collectionKey = this.getAttribute('collectionkey');
+            items = items[collectionKey];
+        }
+        
+        for (const item of items) {
+
+            // <option value="valueKey">displayKey</option>
+            const optionNode = document.createElement('option');
+            optionNode.value = item[valueKey];
+            optionNode.innerHTML = item[displayKey];
+
+            optionsFragment.append(optionNode);
+        }
+
+        this.selectNode.replaceChildren(optionsFragment);
     }
     
     set sourceUrl(sourceUrl) {
