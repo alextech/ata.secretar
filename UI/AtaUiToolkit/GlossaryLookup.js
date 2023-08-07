@@ -37,22 +37,28 @@ export default class GlossaryLookup extends HTMLElement {
     }
     
     async #fetchDictionary() {
-        // const response = await fetch(newValue)
-        // // TODO 1) move to connectedCallback
-        // // TODO 2) add lazy loading attribute true/false - load only on dropdown
-        // const items = await response.json();
-
-        let items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
+        let items;
+        if (this.hasAttribute('sourceUrl')) {
+            const response = await fetch(this.getAttribute('sourceurl'));
+            // // TODO 2) add lazy loading attribute true/false - load only on dropdown
+            items = await response.json();
+            
+            if (!this.hasAttribute('collectionkey')) {
+                throw new Error(
+                    "GlossaryLookup::fetchDictionary. При использовании компонента ata-glossary-lookup через fetch api с collection key обязательно указать collectionkey где находится массив данных."
+                );
+            }
+            
+            const collectionKey = this.getAttribute('collectionkey');
+            items = items[collectionKey];
+        } else {
+            items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
+        }
 
         const optionsFragment = document.createDocumentFragment();
 
         const valueKey = this.valueKey;
         const displayKey = this.displayKey;
-        
-        if (this.hasAttribute('collectionkey')) {
-            const collectionKey = this.getAttribute('collectionkey');
-            items = items[collectionKey];
-        }
         
         for (const item of items) {
 

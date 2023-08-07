@@ -24,9 +24,10 @@
     @{
         bool loaded = _itemsLoaded;
     }
-    
+    <span>Fetch Lookup</span>
     <ata-glossary-lookup
             sourceUrl="/WorkItemGlossary"
+            collectionKey="$values"
             valueKey="id"
             displayKey="displayName"
     ></ata-glossary-lookup>
@@ -130,8 +131,8 @@
     @* <WorkItemList /> *@
     @* <StatusList/> *@
     
+    <span>WebAssembly Store lookup</span>
     <ata-glossary-lookup
-        sourceUrl="/WorkItemGlossary"
         valueKey="id"
         displayKey="displayName"
     ></ata-glossary-lookup>
