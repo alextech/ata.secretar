@@ -36,12 +36,13 @@ export default class GlossaryLookup extends HTMLElement {
         }
     }
     
+    #items;
+    
     async #fetchDictionary() {
-        let items;
         if (this.hasAttribute('sourceUrl')) {
             const response = await fetch(this.getAttribute('sourceurl'));
             // // TODO 2) add lazy loading attribute true/false - load only on dropdown
-            items = await response.json();
+            this.#items = await response.json();
             
             if (!this.hasAttribute('collectionkey')) {
                 throw new Error(
@@ -50,9 +51,9 @@ export default class GlossaryLookup extends HTMLElement {
             }
             
             const collectionKey = this.getAttribute('collectionkey');
-            items = items[collectionKey];
+            this.#items = this.#items[collectionKey];
         } else {
-            items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
+            this.#items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
         }
 
         const optionsFragment = document.createDocumentFragment();
@@ -60,7 +61,7 @@ export default class GlossaryLookup extends HTMLElement {
         const valueKey = this.valueKey;
         const displayKey = this.displayKey;
         
-        for (const item of items) {
+        for (const item of this.#items) {
 
             // <option value="valueKey">displayKey</option>
             const optionNode = document.createElement('option');
@@ -103,6 +104,14 @@ export default class GlossaryLookup extends HTMLElement {
         } else {
             return 'displayName';
         }
+    }
+    
+    set value(value) {
+        
+    }
+    
+    get value() {
+        return this.#items[this.selectNode.value];
     }
 }
 
