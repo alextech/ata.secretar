@@ -19,12 +19,12 @@
     },
     "Ata.Investment.Api": {
       "commandName": "Project",
-      "launchBrowser": false,
-      "launchUrl": "api/allocations",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
       "applicationUrl": "https://localhost:5001",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "SENDGRID_APIKEY": "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"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
 	"UI.Testing": {
@@ -33,8 +33,7 @@
       "launchUrl": "api/allocations",
       "applicationUrl": "https://*:5001;https://localhost:5001;http://localhost:5000",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Testing",
-        "SENDGRID_APIKEY": "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"
+        "ASPNETCORE_ENVIRONMENT": "Testing"
       }
     }
   }
