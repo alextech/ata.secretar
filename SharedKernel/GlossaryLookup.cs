@@ -1,6 +1,6 @@
 ﻿namespace SharedKernel;
 
-public abstract class GlossaryLookup<T> where T : System.Enum
+public abstract class GlossaryLookup<T> : IGlossaryLookup where T : System.Enum
 {
     public T Id { get; init; }
     public string Code { get; init; }

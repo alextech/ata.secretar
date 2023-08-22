@@ -124,11 +124,14 @@ export function registerTimelineItemBridge(timelineItemInstance) {
     });
 }
 
-let dataStore;
-export function registerDataStore(dataStoreInstance) {
-    dataStore = dataStoreInstance;
+const dataStoreMap = {}
+export function registerDataStore(dataStoreInstance, storeType) {
+    if (dataStoreMap.hasOwnProperty(storeType)) {
+        return;
+    }
+    dataStoreMap[storeType] = dataStoreInstance;
 }
 
-export function getDataStore() {
-    return dataStore;
+export function getDataStore(storeType) {
+    return dataStoreMap[storeType];
 }

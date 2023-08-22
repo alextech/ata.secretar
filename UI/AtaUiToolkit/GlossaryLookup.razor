@@ -1,0 +1,25 @@
+﻿@typeparam TGlossaryType where TGlossaryType : SharedKernel.IGlossaryLookup
+
+<ata-glossary-lookup
+    id="webAssemblyLookup"
+    valueKey="id"
+    displayKey="displayName"
+    storeType="@typeof(TGlossaryType)"
+    on:click="LoadItemFromStore"
+></ata-glossary-lookup>
+
+@code {
+
+    [Parameter]
+    public TGlossaryType Value { get; set; }
+    
+    [Parameter]
+    public EventCallback<TGlossaryType> ValueChanged { get; set; }
+
+    private IEnumerable<TGlossaryType> _items = Enumerable.Empty<TGlossaryType>();
+
+    private void LoadItemFromStore(EventArgs e)
+    {
+        
+    }
+}

@@ -26,6 +26,7 @@
     }
     <span>Fetch Lookup</span>
     <ata-glossary-lookup
+            id="fetchLookup"
             sourceUrl="/WorkItemGlossary"
             collectionKey="$values"
             valueKey="id"
@@ -132,10 +133,11 @@
     @* <StatusList/> *@
     
     <span>WebAssembly Store lookup</span>
-    <ata-glossary-lookup
-        valueKey="id"
-        displayKey="displayName"
-    ></ata-glossary-lookup>
+    <GlossaryLookup TGlossaryType="WorkItemType" @bind-Value="_workItemType"></GlossaryLookup>
+    
+    
+    
+    <span>Selected Work Item Type: @_workItemType?.DisplayName</span>
 </section>
 </main>
 
@@ -205,6 +207,10 @@
     
     [Parameter]
     public Guid FeatureID { get; set; }
+
+    #nullable enable
+    private WorkItemType _workItemType;
+    #nullable restore
 
     protected override async Task OnInitializedAsync()
     {

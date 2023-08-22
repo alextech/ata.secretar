@@ -1,19 +1,21 @@
 ﻿@using Microsoft.JSInterop
 @using MediatR
+@using Ata.DeloSled.FeatureTracker.Domain
 
 @inject IJSRuntime JSRuntime;
 @inject IMediator MediatR
 
 @code {
 
-    private DotNetObjectReference<WorkItemStore> _workStoreRef;
+    private DotNetObjectReference<WorkItemTypeStore> _workStoreRef;
 
     protected override async Task OnParametersSetAsync()
     {
-        _workStoreRef = DotNetObjectReference.Create(new WorkItemStore(MediatR));
-        await JSRuntime.InvokeAsync<string>(
+        _workStoreRef = DotNetObjectReference.Create(new WorkItemTypeStore(MediatR));
+        await JSRuntime.InvokeVoidAsync(
             "uiUtils.registerDataStore",
-            _workStoreRef
+            _workStoreRef,
+            typeof(WorkItemType).ToString()
         );
     }
 

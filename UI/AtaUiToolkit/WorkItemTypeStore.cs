@@ -7,11 +7,11 @@ using Microsoft.JSInterop;
 
 namespace AtaUiToolkit;
 
-public class WorkItemStore
+public class WorkItemTypeStore
 {
     private readonly IMediator _mediator;
 
-    public WorkItemStore(IMediator mediator)
+    public WorkItemTypeStore(IMediator mediator)
     {
         _mediator = mediator;
     }

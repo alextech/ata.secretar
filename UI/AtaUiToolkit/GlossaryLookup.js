@@ -5,6 +5,9 @@ dropDownTemplate.innerHTML =
 </select>
 `;
 
+const FETCH_MODE_API_MODE = 'API_MODE';
+const FETCH_MODE_STORE_MODE = 'STORE_MODE';
+
 export default class GlossaryLookup extends HTMLElement {
     
     static get observedAttributes() {
@@ -21,6 +24,7 @@ export default class GlossaryLookup extends HTMLElement {
     
     connectedCallback() {
         this.selectNode.addEventListener('focus', this.#fetchDictionary.bind(this));
+        this.selectNode.addEventListener('change', this.#bubbleChangeHandler.bind(this));
     }
 
     async attributeChangedCallback(attribute, oldValue, newValue) {
@@ -28,8 +32,12 @@ export default class GlossaryLookup extends HTMLElement {
 
         switch (attribute) {
             case 'sourceurl':
-                
+                this.#fetchMode = FETCH_MODE_API_MODE;
 
+                break;
+            case 'storeType':
+                this.#fetchMode = FETCH_MODE_STORE_MODE;
+                
                 break;
             default:
                 return;
@@ -37,9 +45,10 @@ export default class GlossaryLookup extends HTMLElement {
     }
     
     #items;
+    #fetchMode;
     
     async #fetchDictionary() {
-        if (this.hasAttribute('sourceUrl')) {
+        if (this.#fetchMode === FETCH_MODE_API_MODE) {
             const response = await fetch(this.getAttribute('sourceurl'));
             // // TODO 2) add lazy loading attribute true/false - load only on dropdown
             this.#items = await response.json();
@@ -53,7 +62,7 @@ export default class GlossaryLookup extends HTMLElement {
             const collectionKey = this.getAttribute('collectionkey');
             this.#items = this.#items[collectionKey];
         } else {
-            this.#items = await window.uiUtils.getDataStore().invokeMethodAsync('GetAll');
+            this.#items = await window.uiUtils.getDataStore(this.getAttribute('storeType')).invokeMethodAsync('GetAll');
         }
 
         const optionsFragment = document.createDocumentFragment();
@@ -72,6 +81,26 @@ export default class GlossaryLookup extends HTMLElement {
         }
 
         this.selectNode.replaceChildren(optionsFragment);
+    }
+    #bubbleChangeHandler(e) {
+        let event;
+        if (this.#fetchMode === FETCH_MODE_API_MODE) {
+            event = new CustomEvent("change", {
+                detail: {
+                    from: null, // TODO держать от кокого значения перешли
+                    to: this.#items[e.target.value]
+                }
+            });
+        } else {
+            event = new CustomEvent("customchange", {
+                detail: {
+                    from: null, // TODO держать от кокого значения перешли
+                    to: e.target.value
+                }
+            });
+        }
+
+        this.dispatchEvent(event);
     }
     
     set sourceUrl(sourceUrl) {
