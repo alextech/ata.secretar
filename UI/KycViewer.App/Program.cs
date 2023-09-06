@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.FeatureManagement;
 using SharedKernel;
 using Ata.Investment.ClientsList;
+using AtaUiToolkit;
 
 namespace KycViewer.App
 {
@@ -27,6 +28,7 @@ namespace KycViewer.App
 
             builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RpcBehavior<,>));
             builder.Services.AddSingleton<IApplicationState>(new ApplicationState());
+            builder.Services.AddScoped<WorkItemTypeStore>();
 
             builder.Services.AddFeatureManagement();
 

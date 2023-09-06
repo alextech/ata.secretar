@@ -1,25 +1,32 @@
-﻿@typeparam TGlossaryType where TGlossaryType : SharedKernel.IGlossaryLookup
+﻿@using Ata.DeloSled.FeatureTracker.Domain
+@typeparam TGlossaryType where TGlossaryType : SharedKernel.IGlossaryLookup
+
+<DataStore TStoreType="TGlossaryType" @ref="_storeRef"></DataStore>
 
 <ata-glossary-lookup
     id="webAssemblyLookup"
     valueKey="id"
     displayKey="displayName"
     storeType="@typeof(TGlossaryType)"
-    on:click="LoadItemFromStore"
+    @onchange="LoadItemFromStore"
 ></ata-glossary-lookup>
 
 @code {
 
+    // @TODO convert to generic
     [Parameter]
-    public TGlossaryType Value { get; set; }
+    public WorkItemType Value { get; set; }
     
     [Parameter]
-    public EventCallback<TGlossaryType> ValueChanged { get; set; }
+    public EventCallback<WorkItemType> ValueChanged { get; set; }
 
     private IEnumerable<TGlossaryType> _items = Enumerable.Empty<TGlossaryType>();
 
-    private void LoadItemFromStore(EventArgs e)
+    private DataStore<TGlossaryType> _storeRef; 
+
+    private void LoadItemFromStore(ChangeEventArgs e)
     {
-        
+        Value = _storeRef.GetItemById(Convert.ToInt32(e.Value));
+        ValueChanged.InvokeAsync(Value);
     }
 }

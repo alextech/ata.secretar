@@ -3,20 +3,30 @@
 @using Ata.DeloSled.FeatureTracker.Domain
 
 @inject IJSRuntime JSRuntime;
-@inject IMediator MediatR
+@inject WorkItemTypeStore Store;
+
+@typeparam TStoreType where TStoreType : SharedKernel.IGlossaryLookup;
 
 @code {
+    
+    [Parameter]
+    public TStoreType StoreType { get; set; }
 
     private DotNetObjectReference<WorkItemTypeStore> _workStoreRef;
 
     protected override async Task OnParametersSetAsync()
     {
-        _workStoreRef = DotNetObjectReference.Create(new WorkItemTypeStore(MediatR));
+        _workStoreRef = DotNetObjectReference.Create(Store);
         await JSRuntime.InvokeVoidAsync(
             "uiUtils.registerDataStore",
             _workStoreRef,
             typeof(WorkItemType).ToString()
         );
+    }
+
+    public WorkItemType GetItemById(int id)
+    {
+        return Store.FetchById((WorkItemTypeEnum)id);
     }
 
 }

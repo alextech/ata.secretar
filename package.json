@@ -5,7 +5,7 @@
   "repository": "https://alex-tech.visualstudio.com/TSG_Questionnair/_git/Ata.Investment",
   "scripts": {
     "babel-version": "babel-node --version",
-    "lint": "esw webpack.config.* src buildScripts --color",
+    "lint": "esw webpack.config.* src buildScripts --col  or",
     "security-check": "npm audit",
     "test": "karma start karma.conf.js --single-run",
     "clean-dist": "rimraf ./Ata.Investment.Api/wwwroot/dist && mkdir \"./Ata.Investment.Api/wwwroot/dist\"",

@@ -46,6 +46,7 @@ export default class GlossaryLookup extends HTMLElement {
     
     #items;
     #fetchMode;
+    #selectedItem;
     
     async #fetchDictionary() {
         if (this.#fetchMode === FETCH_MODE_API_MODE) {
@@ -62,7 +63,8 @@ export default class GlossaryLookup extends HTMLElement {
             const collectionKey = this.getAttribute('collectionkey');
             this.#items = this.#items[collectionKey];
         } else {
-            this.#items = await window.uiUtils.getDataStore(this.getAttribute('storeType')).invokeMethodAsync('GetAll');
+            this.#items = await window.uiUtils.getDataStore(this.getAttribute('storeType'))
+                .invokeMethodAsync('FetchAllJsProxy');
         }
 
         const optionsFragment = document.createDocumentFragment();
@@ -81,25 +83,11 @@ export default class GlossaryLookup extends HTMLElement {
         }
 
         this.selectNode.replaceChildren(optionsFragment);
+        this.selectNode.selectedIndex = -1;
     }
     #bubbleChangeHandler(e) {
-        let event;
-        if (this.#fetchMode === FETCH_MODE_API_MODE) {
-            event = new CustomEvent("change", {
-                detail: {
-                    from: null, // TODO держать от кокого значения перешли
-                    to: this.#items[e.target.value]
-                }
-            });
-        } else {
-            event = new CustomEvent("customchange", {
-                detail: {
-                    from: null, // TODO держать от кокого значения перешли
-                    to: e.target.value
-                }
-            });
-        }
-
+        this.#selectedItem = this.#items.find(item => item[this.valueKey].toString() === e.target.value);
+        const event = new Event("change");
         this.dispatchEvent(event);
     }
     
@@ -140,7 +128,12 @@ export default class GlossaryLookup extends HTMLElement {
     }
     
     get value() {
-        return this.#items[this.selectNode.value];
+        if (this.#fetchMode === FETCH_MODE_API_MODE) {
+            return this.#selectedItem;
+        } else {
+            return this.#selectedItem[this.valueKey].toString();
+        }
+        
     }
 }
 
